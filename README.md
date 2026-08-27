@@ -24,25 +24,28 @@ conventions all appear in the public
 ## Requirements
 
 - The [soundings](https://github.com/gwenneg/soundings) plugin (and its
-  requirements: a Go toolchain, `glab`)
-- `glab` authenticated to the app-interface GitLab host
-  (`glab auth login --hostname gitlab.cee.redhat.com`)
+  Go toolchain requirement — this helper is invoked via `go run` too)
+- `GITLAB_TOKEN` set to your personal access token (api scope) for the
+  app-interface GitLab host — also what soundings uses to fetch the
+  compare URLs from that host
 - VPN connectivity to that host
 
-The helper is a dependency-free Go command (invoked via `go run`, no
-installation), so the toolchain soundings already requires covers it.
+TLS is always verified — there is no skip option. The helper trusts the
+operating system's certificate store, so a corporate CA installed on
+your machine is used automatically.
 
-## Configuration (all optional)
+## Configuration
 
 | Env var | Meaning | Default |
 |---|---|---|
+| `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
 | `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
 | `APP_INTERFACE_FEEDBACK_URL` | feedback link embedded in the report | none |
 | `APP_INTERFACE_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | soundings default (80) |
 | `APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | soundings default (60) |
 
-No token env vars: authentication is your own `glab` login, and reports
-are posted under your own identity — there is no shared service account.
+Authentication is your own personal token, and reports are posted under
+its identity — there is no shared service account.
 
 ## How it relates to soundings
 
