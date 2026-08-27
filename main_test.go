@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
-	"strings"
 	"testing"
+	"time"
+
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
 func mkNote(body, author string, id int64, createdAt string) note {
@@ -108,15 +109,16 @@ func TestExtractGuidanceSkipsMissingCreatedAt(t *testing.T) {
 	}
 }
 
-func TestParseConcatenatedArrays(t *testing.T) {
-	p1, _ := json.Marshal([]note{mkNote("a", "u", 1, "t")})
-	p2, _ := json.Marshal([]note{mkNote("b", "u", 2, "t"), mkNote("c", "u", 3, "t")})
-	notes, err := parseConcatenatedArrays(strings.NewReader(string(p1) + "\n" + string(p2)))
-	if err != nil {
-		t.Fatal(err)
+func TestFromSDK(t *testing.T) {
+	created := time.Date(2026, 8, 27, 10, 0, 0, 0, time.UTC)
+	sdkNote := &gitlab.Note{ID: 7, Body: "hello", CreatedAt: &created}
+	sdkNote.Author.Username = "alice"
+	n := fromSDK(sdkNote)
+	if n.ID != 7 || n.Body != "hello" || n.Author.Username != "alice" || n.CreatedAt != "2026-08-27T10:00:00Z" {
+		t.Fatalf("got %+v", n)
 	}
-	if len(notes) != 3 {
-		t.Fatalf("got %d notes", len(notes))
+	if n := fromSDK(&gitlab.Note{ID: 8}); n.CreatedAt != "" {
+		t.Fatalf("nil CreatedAt must map to empty string, got %q", n.CreatedAt)
 	}
 }
 

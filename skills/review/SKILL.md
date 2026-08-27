@@ -20,9 +20,11 @@ soundings pipeline (and its isolated assess stage) does that.
 
 Input, from `$ARGUMENTS`: an app-interface MR IID (a number) or a full MR
 URL. If neither was provided, ask — do not guess. Requirements: the
-soundings plugin installed, `glab` authenticated to the app-interface
-GitLab host, VPN connectivity to it, and a Go toolchain (already
-required by soundings).
+soundings plugin installed, `GITLAB_TOKEN` set to the user's personal
+access token (api scope) for the app-interface GitLab host, VPN
+connectivity to it, and a Go toolchain (already required by soundings).
+TLS is always verified against the system trust store; there is no
+skip option.
 
 ## Step 1 — resolve the MR
 
@@ -37,10 +39,11 @@ the MR itself is permission-gated), and, when the
 corresponding env vars are set, `feedback_url`, `auto_deploy`, and
 `review_required`.
 
-On failure, relay the helper's distinction: VPN unreachable vs. `glab`
-auth vs. "no devtools-bot Diffs comment" (not a deployment MR, or the bot
-has not run yet). Do not work around a failure by fetching MR data with
-other tools.
+On failure, relay the helper's distinction: VPN unreachable vs. a bad or
+missing `GITLAB_TOKEN` vs. a TLS trust failure (install the CA, or set
+`APP_INTERFACE_CA_FILE` to a PEM bundle) vs. "no devtools-bot Diffs
+comment" (not a deployment MR, or the bot has not run yet). Do not work
+around a failure by fetching MR data with other tools.
 
 ## Step 2 — delegate to soundings
 
@@ -63,8 +66,8 @@ the report markdown to a file and run:
     go -C ${CLAUDE_PLUGIN_ROOT} run . post <IID or URL> <report file>
 
 It posts a NEW comment (never edits a previous one — re-runs keep an
-audit trail of how the score evolved) under the user's own glab identity,
-and prints the comment URL; relay that URL to the user.
+audit trail of how the score evolved) under the identity of the user's
+own token, and prints the comment URL; relay that URL to the user.
 
 Re-runs are safe by construction: the resolver always reads the MR's
 current state, so after new commits a fresh invocation picks up the
