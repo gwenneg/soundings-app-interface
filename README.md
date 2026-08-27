@@ -40,7 +40,7 @@ your machine is used automatically.
 |---|---|---|
 | `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
 | `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
-| `APP_INTERFACE_FEEDBACK_URL` | feedback link embedded in the report | none |
+| `APP_INTERFACE_FEEDBACK_URL` | compliance-mandated feedback link, inserted into the report by `annotate` | none |
 | `APP_INTERFACE_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | soundings default (80) |
 | `APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | soundings default (60) |
 
@@ -50,11 +50,13 @@ its identity — there is no shared service account.
 ## How it relates to soundings
 
 Everything Red Hat-specific lives here: the MR→compare-URL resolution,
-the pre-authorized guidance convention, the thresholds/feedback plumbing,
-the `app_interface_mode` report banner, and MR posting. The analysis
-itself — fetching, the isolated assessment, scoring, rendering — is
-entirely soundings, invoked by name with a documented parameter contract.
-Soundings never knows the inputs came from app-interface.
+the pre-authorized guidance convention, the thresholds plumbing, the
+override-justification report banner and the compliance-mandated
+feedback link (both inserted by this helper's own `annotate`
+subcommand), and MR posting. The analysis itself — fetching, the
+isolated assessment, scoring, rendering — is entirely soundings, invoked
+by name with a documented parameter contract. Soundings never knows the
+inputs came from app-interface.
 
 Re-running on the same MR after new commits is safe and intended: the
 resolver always reads the MR's current state, and each run posts a new
