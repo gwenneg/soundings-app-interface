@@ -21,13 +21,14 @@ soundings pipeline (and its isolated assess stage) does that.
 Input, from `$ARGUMENTS`: an app-interface MR IID (a number) or a full MR
 URL. If neither was provided, ask — do not guess. Requirements: the
 soundings plugin installed, `glab` authenticated to the app-interface
-GitLab host, VPN connectivity to it, and `python3`.
+GitLab host, VPN connectivity to it, and a Go toolchain (already
+required by soundings).
 
 ## Step 1 — resolve the MR
 
 Run the resolver (read-only: it only lists MR notes):
 
-    python3 ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_mr.py <IID or URL>
+    go -C ${CLAUDE_PLUGIN_ROOT} run . resolve <IID or URL>
 
 It prints one JSON object: `mr_url`, `diff_urls` (from the newest
 devtools-bot `Diffs:` comment), `guidance` (all `/soundings note`
@@ -36,7 +37,7 @@ the MR itself is permission-gated), and, when the
 corresponding env vars are set, `feedback_url`, `auto_deploy`, and
 `review_required`.
 
-On failure, relay the script's distinction: VPN unreachable vs. `glab`
+On failure, relay the helper's distinction: VPN unreachable vs. `glab`
 auth vs. "no devtools-bot Diffs comment" (not a deployment MR, or the bot
 has not run yet). Do not work around a failure by fetching MR data with
 other tools.
@@ -59,7 +60,7 @@ Show the rendered report to the user, then ask whether to post it to the
 MR — never post without an explicit yes in this session. To post, write
 the report markdown to a file and run:
 
-    python3 ${CLAUDE_PLUGIN_ROOT}/scripts/post_report.py <IID or URL> <report file>
+    go -C ${CLAUDE_PLUGIN_ROOT} run . post <IID or URL> <report file>
 
 It posts a NEW comment (never edits a previous one — re-runs keep an
 audit trail of how the score evolved) under the user's own glab identity,

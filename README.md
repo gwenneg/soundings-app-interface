@@ -28,7 +28,9 @@ conventions all appear in the public
 - `glab` authenticated to the app-interface GitLab host
   (`glab auth login --hostname gitlab.cee.redhat.com`)
 - VPN connectivity to that host
-- `python3` (the two helper scripts are stdlib-only)
+
+The helper is a dependency-free Go command (invoked via `go run`, no
+installation), so the toolchain soundings already requires covers it.
 
 ## Configuration (all optional)
 

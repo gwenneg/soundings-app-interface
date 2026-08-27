@@ -1,0 +1,133 @@
+package main
+
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+)
+
+func mkNote(body, author string, id int64, createdAt string) note {
+	var n note
+	n.ID = id
+	n.Body = body
+	n.Author.Username = author
+	n.CreatedAt = createdAt
+	return n
+}
+
+const botBody = "Diffs:\n- https://github.com/org/app/compare/v1...v2\n- https://gitlab.cee.redhat.com/g/p/-/compare/a...b\nnot a url line"
+
+func TestParseMRArg(t *testing.T) {
+	cases := []struct {
+		name     string
+		arg      string
+		wantHost string
+		wantIID  int64
+		wantErr  bool
+	}{
+		{"bare iid", "12345", "h.example.com", 12345, false},
+		{"full url", "https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/98765", "gitlab.cee.redhat.com", 98765, false},
+		{"wrong project", "https://gitlab.cee.redhat.com/other/repo/-/merge_requests/1", "", 0, true},
+		{"not a number", "not-a-number", "", 0, true},
+		{"negative", "-3", "", 0, true},
+	}
+	for _, c := range cases {
+		host, iid, err := parseMRArg(c.arg, "h.example.com")
+		if (err != nil) != c.wantErr {
+			t.Errorf("%s: err=%v, wantErr=%v", c.name, err, c.wantErr)
+			continue
+		}
+		if err == nil && (host != c.wantHost || iid != c.wantIID) {
+			t.Errorf("%s: got (%q, %d), want (%q, %d)", c.name, host, iid, c.wantHost, c.wantIID)
+		}
+	}
+}
+
+func TestExtractDiffURLsNewestBotCommentWins(t *testing.T) {
+	notes := []note{ // newest first, as the API returns them
+		mkNote("Diffs:\n- https://github.com/org/app/compare/v2...v3", botUsername, 9, "2026-08-27T11:00:00Z"),
+		mkNote(botBody, botUsername, 1, "2026-08-27T10:00:00Z"),
+	}
+	urls, err := extractDiffURLs(notes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(urls) != 1 || urls[0] != "https://github.com/org/app/compare/v2...v3" {
+		t.Fatalf("got %v", urls)
+	}
+}
+
+func TestExtractDiffURLsIgnoresNonBotAndNonDiffs(t *testing.T) {
+	notes := []note{
+		mkNote("Diffs:\n- https://github.com/evil/evil/compare/a...b", "attacker", 3, "2026-08-27T10:00:00Z"),
+		mkNote("looks normal", botUsername, 2, "2026-08-27T10:00:00Z"),
+		mkNote(botBody, botUsername, 1, "2026-08-27T10:00:00Z"),
+	}
+	urls, err := extractDiffURLs(notes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(urls) != 2 {
+		t.Fatalf("expected the 2 URLs from the real bot comment, got %v", urls)
+	}
+}
+
+func TestExtractDiffURLsNoBotComment(t *testing.T) {
+	if _, err := extractDiffURLs([]note{mkNote("hello", "someone", 1, "2026-08-27T10:00:00Z")}); err == nil {
+		t.Fatal("expected an error when no devtools-bot Diffs comment exists")
+	}
+}
+
+func TestExtractGuidance(t *testing.T) {
+	notes := []note{ // newest first
+		mkNote("/soundings note newer guidance", "alice", 3, "2026-08-27T11:00:00Z"),
+		mkNote("/SOUNDINGS NOTE older\nspanning lines", "bob", 2, "2026-08-27T10:00:00Z"),
+		mkNote("just a comment", "carol", 1, "2026-08-27T09:00:00Z"),
+	}
+	g := extractGuidance(notes, "https://h/mr/1")
+	if len(g) != 2 {
+		t.Fatalf("got %d entries", len(g))
+	}
+	if g[0].Author != "bob" || g[0].Content != "older\nspanning lines" {
+		t.Errorf("oldest first expected, got %+v", g[0])
+	}
+	if g[1].CommentURL != "https://h/mr/1#note_3" {
+		t.Errorf("got comment url %q", g[1].CommentURL)
+	}
+}
+
+func TestExtractGuidanceIgnoresLegacyRCSNote(t *testing.T) {
+	if g := extractGuidance([]note{mkNote("/rcs note old convention", "bob", 1, "2026-08-27T10:00:00Z")}, "u"); len(g) != 0 {
+		t.Fatalf("legacy /rcs note must be ignored, got %+v", g)
+	}
+}
+
+func TestExtractGuidanceSkipsMissingCreatedAt(t *testing.T) {
+	if g := extractGuidance([]note{mkNote("/soundings note x", "bob", 1, "")}, "u"); len(g) != 0 {
+		t.Fatalf("expected no entries, got %+v", g)
+	}
+}
+
+func TestParseConcatenatedArrays(t *testing.T) {
+	p1, _ := json.Marshal([]note{mkNote("a", "u", 1, "t")})
+	p2, _ := json.Marshal([]note{mkNote("b", "u", 2, "t"), mkNote("c", "u", 3, "t")})
+	notes, err := parseConcatenatedArrays(strings.NewReader(string(p1) + "\n" + string(p2)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(notes) != 3 {
+		t.Fatalf("got %d notes", len(notes))
+	}
+}
+
+func TestEnvThreshold(t *testing.T) {
+	t.Setenv("X_THRESHOLD", "0")
+	n, err := envThreshold("X_THRESHOLD")
+	if err != nil || n == nil || *n != 0 {
+		t.Fatalf("explicit 0 must survive, got %v, %v", n, err)
+	}
+	t.Setenv("X_THRESHOLD", "101")
+	if _, err := envThreshold("X_THRESHOLD"); err == nil {
+		t.Fatal("out-of-range threshold must fail")
+	}
+}
