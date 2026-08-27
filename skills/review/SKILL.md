@@ -7,7 +7,7 @@ description: >-
   optionally post the report back to the MR. Use when the user asks to
   review, score, or assess an app-interface MR or deployment MR, or gives
   a gitlab.cee.redhat.com app-interface merge request URL or IID.
-allowed-tools: Skill
+allowed-tools: Skill, Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . resolve *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . post *)
 ---
 
 # App-interface release review
