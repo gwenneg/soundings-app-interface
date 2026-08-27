@@ -32,8 +32,7 @@ conventions all appear in the public
 
 TLS is always verified — there is no skip option. The helper trusts the
 operating system's certificate store, so a corporate CA installed on
-your machine is used automatically; for a machine without it, point
-`APP_INTERFACE_CA_FILE` at a PEM bundle to trust in addition.
+your machine is used automatically.
 
 ## Configuration
 
@@ -41,7 +40,6 @@ your machine is used automatically; for a machine without it, point
 |---|---|---|
 | `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
 | `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
-| `APP_INTERFACE_CA_FILE` | extra PEM CA bundle to trust for TLS | system trust store only |
 | `APP_INTERFACE_FEEDBACK_URL` | feedback link embedded in the report | none |
 | `APP_INTERFACE_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | soundings default (80) |
 | `APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | soundings default (60) |

@@ -17,16 +17,13 @@
 //
 // GitLab access uses the official Go SDK, authenticated by GITLAB_TOKEN -
 // the user's own personal access token, so everything happens under their
-// identity. TLS is always verified: the default transport trusts the OS
-// certificate store (which is where a corporate CA lives), and
-// APP_INTERFACE_CA_FILE can add a PEM bundle for machines without it.
-// The helper only ever reads or writes MR notes - fetching diff content
-// stays inside soundings.
+// identity. TLS is always verified against the operating system's
+// certificate store, which is where a corporate CA lives; there is
+// deliberately no skip option. The helper only ever reads or writes MR
+// notes - fetching diff content stays inside soundings.
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -166,39 +163,10 @@ func newGitLabClient(host string) (*gitlab.Client, error) {
 	if token == "" {
 		return nil, fmt.Errorf("GITLAB_TOKEN is not set - create a personal access token (api scope) on https://%s and export it as GITLAB_TOKEN", host)
 	}
-	httpClient, err := newHTTPClient()
-	if err != nil {
-		return nil, err
-	}
+	// The default transport verifies TLS against the OS trust store.
 	return gitlab.NewClient(token,
 		gitlab.WithBaseURL("https://"+host),
-		gitlab.WithHTTPClient(httpClient))
-}
-
-// newHTTPClient returns a client that verifies TLS against the OS trust
-// store - the certificate installed on the laptop is what gets used. When
-// APP_INTERFACE_CA_FILE names a PEM bundle, its certificates are added to
-// (never replacing) the system pool, for machines without the CA installed.
-func newHTTPClient() (*http.Client, error) {
-	caFile := os.Getenv("APP_INTERFACE_CA_FILE")
-	if caFile == "" {
-		return &http.Client{Timeout: 60 * time.Second}, nil
-	}
-	pem, err := os.ReadFile(caFile)
-	if err != nil {
-		return nil, fmt.Errorf("reading APP_INTERFACE_CA_FILE: %w", err)
-	}
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		pool = x509.NewCertPool()
-	}
-	if !pool.AppendCertsFromPEM(pem) {
-		return nil, fmt.Errorf("APP_INTERFACE_CA_FILE %s contains no valid PEM certificates", caFile)
-	}
-	return &http.Client{
-		Timeout:   60 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}},
-	}, nil
+		gitlab.WithHTTPClient(&http.Client{Timeout: 60 * time.Second}))
 }
 
 // parseMRArg accepts a bare IID or a full MR URL; returns (host, iid).
@@ -264,7 +232,7 @@ func classifyErr(host string, err error) error {
 		strings.Contains(msg, "i/o timeout"), strings.Contains(msg, "connection refused"):
 		return fmt.Errorf("cannot reach %s - are you on the VPN? (%v)", host, err)
 	case strings.Contains(msg, "certificate"), strings.Contains(msg, "x509"):
-		return fmt.Errorf("TLS verification for %s failed - install its CA in the system trust store, or point APP_INTERFACE_CA_FILE at a PEM bundle containing it (%v)", host, err)
+		return fmt.Errorf("TLS verification for %s failed - install its CA in the system trust store (%v)", host, err)
 	case strings.Contains(msg, "401"), strings.Contains(msg, "403"):
 		return fmt.Errorf("authentication to %s failed - check that GITLAB_TOKEN is valid and has the api scope (%v)", host, err)
 	case strings.Contains(msg, "404"):

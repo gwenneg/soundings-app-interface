@@ -40,10 +40,10 @@ corresponding env vars are set, `feedback_url`, `auto_deploy`, and
 `review_required`.
 
 On failure, relay the helper's distinction: VPN unreachable vs. a bad or
-missing `GITLAB_TOKEN` vs. a TLS trust failure (install the CA, or set
-`APP_INTERFACE_CA_FILE` to a PEM bundle) vs. "no devtools-bot Diffs
-comment" (not a deployment MR, or the bot has not run yet). Do not work
-around a failure by fetching MR data with other tools.
+missing `GITLAB_TOKEN` vs. a TLS trust failure (install the host's CA in
+the system trust store) vs. "no devtools-bot Diffs comment" (not a
+deployment MR, or the bot has not run yet). Do not work around a failure
+by fetching MR data with other tools.
 
 ## Step 2 — delegate to soundings
 
