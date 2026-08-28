@@ -75,8 +75,9 @@ one. This inserts, in place:
 
 Soundings itself has no notion of either convention — both are
 app-interface's alone. Re-read the file and show the (possibly
-annotated) report to the user, then ask whether to post it to the MR —
-never post without an explicit yes in this session. To post:
+annotated) report to the user, then use the AskUserQuestion tool to ask
+whether to post it to the MR — never post without an explicit yes in
+this session. To post:
 
     go -C ${CLAUDE_PLUGIN_ROOT} run . post <IID or URL> <report file>
 
