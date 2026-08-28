@@ -37,6 +37,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"regexp"
@@ -74,6 +75,8 @@ var (
 )
 
 func main() {
+	initLogging()
+
 	var err error
 	switch {
 	case len(os.Args) == 3 && os.Args[1] == "resolve":
@@ -91,6 +94,25 @@ func main() {
 		fmt.Fprintf(os.Stderr, "soundings-app-interface: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func initLogging() {
+	level := slog.LevelInfo
+	if v := os.Getenv("SOUNDINGS_LOG_LEVEL"); v != "" {
+		switch strings.ToLower(v) {
+		case "debug":
+			level = slog.LevelDebug
+		case "info":
+			level = slog.LevelInfo
+		case "warn":
+			level = slog.LevelWarn
+		case "error":
+			level = slog.LevelError
+		default:
+			fmt.Fprintf(os.Stderr, "soundings-app-interface: SOUNDINGS_LOG_LEVEL=%q is not recognized (valid: debug, info, warn, error); using info\n", v)
+		}
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 }
 
 // note is the subset of a GitLab MR note the helper works with; keeping it
@@ -126,6 +148,7 @@ func runResolve(mrArg string) error {
 		return err
 	}
 	mrURL := fmt.Sprintf("https://%s/%s/-/merge_requests/%d", host, project, iid)
+	slog.Info("Resolving app-interface MR", "mr_iid", iid, "host", host)
 
 	client, err := newGitLabClient(host)
 	if err != nil {
@@ -139,7 +162,8 @@ func runResolve(mrArg string) error {
 	if err != nil {
 		return err
 	}
-	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: extractGuidance(notes, mrURL)}
+	guidance := extractGuidance(notes, mrURL)
+	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
 	out.FeedbackURL = os.Getenv("APP_INTERFACE_FEEDBACK_URL")
 	if out.AutoDeploy, err = envThreshold("APP_INTERFACE_AUTO_DEPLOY_THRESHOLD"); err != nil {
 		return err
@@ -230,6 +254,7 @@ func runPost(mrArg, reportPath string) error {
 	if err != nil {
 		return fmt.Errorf("posting comment failed: %w", classifyErr(host, err))
 	}
+	slog.Info("Report posted to merge request", "mr_iid", iid)
 	fmt.Printf("https://%s/%s/-/merge_requests/%d#note_%d\n", host, project, iid, posted.ID)
 	return nil
 }
@@ -332,6 +357,7 @@ func extractDiffURLs(notes []note) ([]string, error) {
 			urls = append(urls, m[1])
 		}
 		if len(urls) > 0 {
+			slog.Debug("Found devtools-bot diff URLs", "count", len(urls))
 			return urls, nil
 		}
 	}
@@ -344,9 +370,14 @@ func extractGuidance(notes []note, mrURL string) []guidanceEntry {
 	guidance := []guidanceEntry{}
 	for _, n := range notes {
 		m := guidanceRe.FindStringSubmatch(n.Body)
-		if m == nil || n.CreatedAt == "" {
+		if m == nil {
 			continue
 		}
+		if n.CreatedAt == "" {
+			slog.Warn("Skipping guidance with empty CreatedAt", "note_id", n.ID)
+			continue
+		}
+		slog.Debug("Found app-interface user guidance", "author", n.Author.Username)
 		guidance = append(guidance, guidanceEntry{
 			Content:    m[1],
 			Author:     n.Author.Username,
