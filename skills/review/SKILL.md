@@ -19,8 +19,7 @@ not analyze anything yourself, and you never fetch diff content — the
 soundings pipeline (and its isolated assess stage) does that.
 
 Input, from `$ARGUMENTS`: an app-interface MR IID (a number) or a full MR
-URL. If neither was provided, ask using the AskUserQuestion tool — do not
-guess. Requirements: the
+URL. If neither was provided, ask — do not guess. Requirements: the
 soundings plugin installed, `GITLAB_TOKEN` set to the user's personal
 access token (api scope) for the app-interface GitLab host, VPN
 connectivity to it, and a Go toolchain (already required by soundings).
