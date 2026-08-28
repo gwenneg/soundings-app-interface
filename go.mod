@@ -1,6 +1,6 @@
 module github.com/gwenneg/soundings-app-interface
 
-go 1.25.0
+go 1.26.0
 
 require gitlab.com/gitlab-org/api/client-go/v2 v2.58.2
 
