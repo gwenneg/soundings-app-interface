@@ -7,7 +7,7 @@ description: >-
   optionally post the report back to the MR. Use when the user asks to
   review, score, or assess an app-interface MR or deployment MR, or gives
   a gitlab.cee.redhat.com app-interface merge request URL or IID.
-allowed-tools: Skill, Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . resolve *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . annotate *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . post *)
+allowed-tools: Skill, AskUserQuestion, Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . resolve *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . annotate *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . post *)
 ---
 
 # App-interface release review
@@ -19,7 +19,8 @@ not analyze anything yourself, and you never fetch diff content — the
 soundings pipeline (and its isolated assess stage) does that.
 
 Input, from `$ARGUMENTS`: an app-interface MR IID (a number) or a full MR
-URL. If neither was provided, ask — do not guess. Requirements: the
+URL. If neither was provided, ask using the AskUserQuestion tool — do not
+guess. Requirements: the
 soundings plugin installed, `GITLAB_TOKEN` set to the user's personal
 access token (api scope) for the app-interface GitLab host, VPN
 connectivity to it, and a Go toolchain (already required by soundings).
@@ -75,8 +76,9 @@ one. This inserts, in place:
 
 Soundings itself has no notion of either convention — both are
 app-interface's alone. Re-read the file and show the (possibly
-annotated) report to the user, then ask whether to post it to the MR —
-never post without an explicit yes in this session. To post:
+annotated) report to the user, then use the AskUserQuestion tool to ask
+whether to post it to the MR — never post without an explicit yes in
+this session. To post:
 
     go -C ${CLAUDE_PLUGIN_ROOT} run . post <IID or URL> <report file>
 
