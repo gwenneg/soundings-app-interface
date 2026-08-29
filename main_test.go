@@ -119,6 +119,13 @@ func TestAnnotateReportInsertsBannerWhenNotRecommended(t *testing.T) {
 	if bannerIdx, sepIdx := strings.Index(got, overrideBanner), strings.Index(got, "---"); bannerIdx >= sepIdx {
 		t.Fatalf("expected banner before the separator, got %q", got)
 	}
+	// A paragraph immediately followed by "---" on the next line is parsed
+	// as a Setext H2 heading in CommonMark, not a thematic break - the
+	// banner and the separator must be split by a blank line or the
+	// separator silently stops rendering as a horizontal rule.
+	if !strings.Contains(got, "tool.\n\n---") {
+		t.Fatalf("expected a blank line between the banner and the separator, got %q", got)
+	}
 }
 
 func TestAnnotateReportLeavesOtherRecommendationsUnchanged(t *testing.T) {
