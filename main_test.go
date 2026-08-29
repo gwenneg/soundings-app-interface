@@ -197,3 +197,23 @@ func TestEnvThreshold(t *testing.T) {
 		t.Fatal("out-of-range threshold must fail")
 	}
 }
+
+func TestValidateThresholdOrder(t *testing.T) {
+	ptr := func(n int) *int { return &n }
+
+	if err := validateThresholdOrder(nil, nil); err != nil {
+		t.Errorf("both unset must not error, got %v", err)
+	}
+	if err := validateThresholdOrder(ptr(80), nil); err != nil {
+		t.Errorf("one unset must not error, got %v", err)
+	}
+	if err := validateThresholdOrder(ptr(80), ptr(60)); err != nil {
+		t.Errorf("auto-deploy >= review-required must not error, got %v", err)
+	}
+	if err := validateThresholdOrder(ptr(80), ptr(80)); err != nil {
+		t.Errorf("equal thresholds must not error, got %v", err)
+	}
+	if err := validateThresholdOrder(ptr(60), ptr(80)); err == nil {
+		t.Fatal("swapped thresholds (auto-deploy < review-required) must error")
+	}
+}

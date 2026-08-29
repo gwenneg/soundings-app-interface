@@ -165,10 +165,13 @@ func runResolve(mrArg string) error {
 	guidance := extractGuidance(notes, mrURL)
 	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
 	out.FeedbackURL = os.Getenv("SOUNDINGS_FEEDBACK_URL")
-	if out.AutoDeploy, err = envThreshold("APP_INTERFACE_AUTO_DEPLOY_THRESHOLD"); err != nil {
+	if out.AutoDeploy, err = envThreshold("SOUNDINGS_AUTO_DEPLOY_THRESHOLD"); err != nil {
 		return err
 	}
-	if out.ReviewRequired, err = envThreshold("APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD"); err != nil {
+	if out.ReviewRequired, err = envThreshold("SOUNDINGS_REVIEW_REQUIRED_THRESHOLD"); err != nil {
+		return err
+	}
+	if err := validateThresholdOrder(out.AutoDeploy, out.ReviewRequired); err != nil {
 		return err
 	}
 
@@ -409,4 +412,21 @@ func envThreshold(name string) (*int, error) {
 		return nil, fmt.Errorf("%s must be an integer between 0 and 100, got %q", name, v)
 	}
 	return &n, nil
+}
+
+// validateThresholdOrder catches a misconfigured pair of threshold env vars
+// (e.g. accidentally swapped) at resolve time, rather than letting it
+// surface later as a confusing failure deep inside soundings' own render
+// step. A nil threshold - meaning its env var wasn't set - never triggers
+// this: soundings' own defaults apply in that case, and there's nothing to
+// compare.
+func validateThresholdOrder(autoDeploy, reviewRequired *int) error {
+	if autoDeploy == nil || reviewRequired == nil {
+		return nil
+	}
+	if *autoDeploy < *reviewRequired {
+		return fmt.Errorf("SOUNDINGS_AUTO_DEPLOY_THRESHOLD (%d) must be >= SOUNDINGS_REVIEW_REQUIRED_THRESHOLD (%d)",
+			*autoDeploy, *reviewRequired)
+	}
+	return nil
 }

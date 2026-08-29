@@ -41,8 +41,8 @@ your machine is used automatically.
 | `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
 | `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
 | `SOUNDINGS_FEEDBACK_URL` | compliance-mandated feedback link, inserted into the report by `annotate` | none |
-| `APP_INTERFACE_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | soundings default (80) |
-| `APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | soundings default (60) |
+| `SOUNDINGS_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | soundings default (80) |
+| `SOUNDINGS_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | soundings default (60) |
 
 Authentication is your own personal token, and reports are posted under
 its identity — there is no shared service account.
