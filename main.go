@@ -165,10 +165,10 @@ func runResolve(mrArg string) error {
 	guidance := extractGuidance(notes, mrURL)
 	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
 	out.FeedbackURL = os.Getenv("SOUNDINGS_FEEDBACK_URL")
-	if out.AutoDeploy, err = envThreshold("APP_INTERFACE_AUTO_DEPLOY_THRESHOLD"); err != nil {
+	if out.AutoDeploy, err = envThreshold("SOUNDINGS_AUTO_DEPLOY_THRESHOLD"); err != nil {
 		return err
 	}
-	if out.ReviewRequired, err = envThreshold("APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD"); err != nil {
+	if out.ReviewRequired, err = envThreshold("SOUNDINGS_REVIEW_REQUIRED_THRESHOLD"); err != nil {
 		return err
 	}
 	if err := validateThresholdOrder(out.AutoDeploy, out.ReviewRequired); err != nil {
@@ -425,7 +425,7 @@ func validateThresholdOrder(autoDeploy, reviewRequired *int) error {
 		return nil
 	}
 	if *autoDeploy < *reviewRequired {
-		return fmt.Errorf("APP_INTERFACE_AUTO_DEPLOY_THRESHOLD (%d) must be >= APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD (%d)",
+		return fmt.Errorf("SOUNDINGS_AUTO_DEPLOY_THRESHOLD (%d) must be >= SOUNDINGS_REVIEW_REQUIRED_THRESHOLD (%d)",
 			*autoDeploy, *reviewRequired)
 	}
 	return nil
