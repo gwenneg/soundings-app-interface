@@ -164,7 +164,7 @@ func runResolve(mrArg string) error {
 	}
 	guidance := extractGuidance(notes, mrURL)
 	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
-	out.FeedbackURL = os.Getenv("APP_INTERFACE_FEEDBACK_URL")
+	out.FeedbackURL = os.Getenv("SOUNDINGS_FEEDBACK_URL")
 	if out.AutoDeploy, err = envThreshold("APP_INTERFACE_AUTO_DEPLOY_THRESHOLD"); err != nil {
 		return err
 	}
