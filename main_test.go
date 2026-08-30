@@ -224,3 +224,9 @@ func TestValidateThresholdOrder(t *testing.T) {
 		t.Fatal("swapped thresholds (auto-deploy < review-required) must error")
 	}
 }
+
+func TestPluginVersionFromManifest(t *testing.T) {
+	if pluginVersion == "unknown" || pluginVersion == "" {
+		t.Fatalf("pluginVersion = %q: the embedded .claude-plugin/plugin.json did not yield a version", pluginVersion)
+	}
+}

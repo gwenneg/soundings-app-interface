@@ -42,6 +42,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,8 +57,22 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
-// pluginVersion mirrors .claude-plugin/plugin.json; bump both together.
-const pluginVersion = "0.5.0"
+// pluginManifest embeds the plugin manifest so the version has a single
+// source of truth: .claude-plugin/plugin.json.
+//
+//go:embed all:.claude-plugin/plugin.json
+var pluginManifest []byte
+
+// pluginVersion is read from the embedded manifest at startup.
+var pluginVersion = func() string {
+	var m struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(pluginManifest, &m); err != nil || m.Version == "" {
+		return "unknown"
+	}
+	return m.Version
+}()
 
 const (
 	project     = "service/app-interface"
