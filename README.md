@@ -49,20 +49,25 @@ conventions all appear in the public
 
 ## Install
 
-Both this plugin and Soundings are distributed through the
+This plugin is distributed through the
 [claude-ichiba](https://github.com/gwenneg/claude-ichiba) marketplace —
 no cloning or file editing. In Claude Code:
 
 ```
 /plugin marketplace add gwenneg/claude-ichiba
 /plugin install soundings-app-interface@claude-ichiba
-/plugin install soundings@claude-ichiba
 /reload-plugins
 ```
 
 This plugin only resolves the app-interface MR and posts the report; the
 analysis itself is delegated to Soundings, which must be installed too
-(see [Requirements](#requirements) for the minimum version).
+(see [Requirements](#requirements) for the minimum version):
+
+```
+/plugin marketplace add gwenneg/claude-ichiba
+/plugin install soundings@claude-ichiba
+/reload-plugins
+```
 
 ## Staying up to date
 
