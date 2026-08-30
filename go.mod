@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/modelcontextprotocol/go-sdk v1.7.0
-	gitlab.com/gitlab-org/api/client-go/v2 v2.58.2
+	gitlab.com/gitlab-org/api/client-go/v2 v2.60.0
 )
 
 require (
