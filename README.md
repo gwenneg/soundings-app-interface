@@ -23,8 +23,9 @@ conventions all appear in the public
 
 ## Requirements
 
-- The [soundings](https://github.com/gwenneg/soundings) plugin (and its
-  Go toolchain requirement — this helper is invoked via `go run` too)
+- The [soundings](https://github.com/gwenneg/soundings) plugin, version
+  0.4.0 or later (and its Go toolchain requirement — this helper runs via
+  `go run` too)
 - `GITLAB_TOKEN` set to your personal access token (api scope) for the
   app-interface GitLab host — also what soundings uses to fetch the
   compare URLs from that host
@@ -46,6 +47,26 @@ your machine is used automatically.
 
 Authentication is your own personal token, and reports are posted under
 its identity — there is no shared service account.
+
+## Helper MCP server
+
+The plugin bundles its Go helper as an MCP server exposing three tools —
+`resolve`, `annotate`, and `post` — started automatically per session.
+Like the soundings helper, it is inert at rest: no credentials are read
+and no network is touched until a tool is called. Serving named tools
+instead of shell commands means the review skill's turn disallows Bash,
+Write, and Edit outright — the model orchestrates, the helper executes.
+
+## Permission prompts
+
+A review run is prompt-free except for posting: soundings pre-approves
+its own pipeline and writes the report file itself (via `report_path`),
+and this plugin ships a PreToolUse hook that pre-approves its own
+`resolve` and `annotate` tools by exact name. User-configured deny/ask
+rules always override the approval. `post` is deliberately NOT
+pre-approved: it is the one outward-facing action, so posting the report
+to the MR always asks — both the skill's explicit question and the
+harness prompt.
 
 ## How it relates to soundings
 
