@@ -85,7 +85,7 @@ This inserts, in place:
 - app-interface's override-justification banner (`/soundings override
   <justification>`, for the audit trail) when the recommendation is
   "RELEASE NOT RECOMMENDED" — a no-op otherwise;
-- the compliance-mandated feedback link, when a feedback URL was given.
+- the feedback link, when a feedback URL was given.
 
 Soundings itself has no notion of either convention — both are
 app-interface's alone. Re-read the file and show the (possibly

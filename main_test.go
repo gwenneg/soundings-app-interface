@@ -21,20 +21,23 @@ const botBody = "Diffs:\n- https://github.com/org/app/compare/v1...v2\n- https:/
 
 func TestParseMRArg(t *testing.T) {
 	cases := []struct {
-		name     string
-		arg      string
-		wantHost string
-		wantIID  int64
-		wantErr  bool
+		name        string
+		arg         string
+		allowedHost string
+		wantHost    string
+		wantIID     int64
+		wantErr     bool
 	}{
-		{"bare iid", "12345", "h.example.com", 12345, false},
-		{"full url", "https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/98765", "gitlab.cee.redhat.com", 98765, false},
-		{"wrong project", "https://gitlab.cee.redhat.com/other/repo/-/merge_requests/1", "", 0, true},
-		{"not a number", "not-a-number", "", 0, true},
-		{"negative", "-3", "", 0, true},
+		{"bare iid", "12345", "h.example.com", "h.example.com", 12345, false},
+		{"full url on allowed host", "https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/98765", "gitlab.cee.redhat.com", "gitlab.cee.redhat.com", 98765, false},
+		{"full url on allowed host, different case", "https://GitLab.cee.redhat.com/service/app-interface/-/merge_requests/98765", "gitlab.cee.redhat.com", "gitlab.cee.redhat.com", 98765, false},
+		{"full url on a different host is rejected", "https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/98765", "h.example.com", "", 0, true},
+		{"wrong project", "https://gitlab.cee.redhat.com/other/repo/-/merge_requests/1", "gitlab.cee.redhat.com", "", 0, true},
+		{"not a number", "not-a-number", "h.example.com", "", 0, true},
+		{"negative", "-3", "h.example.com", "", 0, true},
 	}
 	for _, c := range cases {
-		host, iid, err := parseMRArg(c.arg, "h.example.com")
+		host, iid, err := parseMRArg(c.arg, c.allowedHost)
 		if (err != nil) != c.wantErr {
 			t.Errorf("%s: err=%v, wantErr=%v", c.name, err, c.wantErr)
 			continue

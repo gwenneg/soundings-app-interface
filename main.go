@@ -17,11 +17,11 @@
 //	                                 override-justification banner into a
 //	                                 rendered soundings report, in place,
 //	                                 when its recommendation is "RELEASE
-//	                                 NOT RECOMMENDED", and the compliance-
-//	                                 mandated feedback link when a feedback
-//	                                 URL is given. Both are no-ops when
-//	                                 their condition doesn't apply, and
-//	                                 idempotent if run twice.
+//	                                 NOT RECOMMENDED", and the feedback
+//	                                 link when a feedback URL is given.
+//	                                 Both are no-ops when their condition
+//	                                 doesn't apply, and idempotent if run
+//	                                 twice.
 //
 //	post <MR IID or URL> <file>      Post a report markdown file to the MR
 //	                                 as a NEW comment - never an edit - so
@@ -74,7 +74,7 @@ const (
 var (
 	// URLs on lines starting with "- " inside the bot comment.
 	urlRe = regexp.MustCompile(`(?m)^- (https?://\S+)$`)
-	// "/soundings note <text>", multiline and case-insensitive.
+	// "/soundings note <text>", case-insensitive; <text> may span lines.
 	guidanceRe = regexp.MustCompile(`(?is)^\s*/soundings\s+note\s+(\S.*\S|\S)`)
 	mrURLRe    = regexp.MustCompile(`^https?://([^/]+)/(.+)/-/merge_requests/(\d+)`)
 	// The horizontal-rule line the soundings report template emits right
@@ -209,9 +209,9 @@ func doResolve(mrArg string) (*resolveOutput, error) {
 }
 
 // runAnnotate inserts app-interface's own report additions - the
-// override-justification banner and the compliance-mandated feedback
-// link - into a rendered soundings report, in place. Soundings itself has
-// no notion of either convention; both are entirely app-interface's own.
+// override-justification banner and the feedback link - into a rendered
+// soundings report, in place. Soundings itself has no notion of either
+// convention; both are entirely app-interface's own.
 func runAnnotate(reportPath, feedbackURL string) error {
 	_, err := doAnnotate(reportPath, feedbackURL)
 	return err
@@ -257,9 +257,8 @@ func insertOverrideBanner(markdown string) string {
 	return markdown[:loc[0]] + overrideBanner + markdown[loc[0]:]
 }
 
-// insertFeedbackLink adds the compliance-mandated feedback link right
-// before the report's closing attribution line, when a feedback URL is
-// configured.
+// insertFeedbackLink adds the feedback link right before the report's
+// closing attribution line, when a feedback URL is configured.
 func insertFeedbackLink(markdown, feedbackURL string) string {
 	if feedbackURL == "" || strings.Contains(markdown, feedbackURL) {
 		return markdown
@@ -324,9 +323,16 @@ func newGitLabClient(host string) (*gitlab.Client, error) {
 		gitlab.WithHTTPClient(&http.Client{Timeout: 60 * time.Second}))
 }
 
-// parseMRArg accepts a bare IID or a full MR URL; returns (host, iid).
-func parseMRArg(arg, defaultHost string) (string, int64, error) {
+// parseMRArg accepts a bare IID or a full MR URL, and returns (host, iid).
+// allowedHost is the only host ever returned: a URL naming a different
+// host is rejected outright, so GITLAB_TOKEN is never sent anywhere but
+// the one configured app-interface host, regardless of what host an "mr"
+// argument names.
+func parseMRArg(arg, allowedHost string) (string, int64, error) {
 	if m := mrURLRe.FindStringSubmatch(arg); m != nil {
+		if !strings.EqualFold(m[1], allowedHost) {
+			return "", 0, fmt.Errorf("expected an MR on %s, got host %s", allowedHost, m[1])
+		}
 		if m[2] != project {
 			return "", 0, fmt.Errorf("expected an MR of %s, got %s", project, m[2])
 		}
@@ -334,10 +340,10 @@ func parseMRArg(arg, defaultHost string) (string, int64, error) {
 		if err != nil {
 			return "", 0, fmt.Errorf("invalid MR IID %q", m[3])
 		}
-		return strings.ToLower(m[1]), iid, nil
+		return allowedHost, iid, nil
 	}
 	if iid, err := strconv.ParseInt(arg, 10, 64); err == nil && iid > 0 {
-		return defaultHost, iid, nil
+		return allowedHost, iid, nil
 	}
 	return "", 0, fmt.Errorf("expected an MR IID or MR URL, got %q", arg)
 }
