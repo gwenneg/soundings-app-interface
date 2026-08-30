@@ -25,6 +25,13 @@
 //	                                 re-runs keep an audit trail. Prints the
 //	                                 posted comment's URL.
 //
+//	hook <plugin root>               Run as a Claude Code PreToolUse hook:
+//	                                 pre-approve Bash invocations of this
+//	                                 plugin's own resolve and annotate
+//	                                 subcommands (post stays gated - it is
+//	                                 the one outward-facing action). See
+//	                                 hook.go.
+//
 // GitLab access uses the official Go SDK, authenticated by GITLAB_TOKEN -
 // the user's own personal access token, so everything happens under their
 // identity. TLS is always verified against the operating system's
@@ -87,8 +94,10 @@ func main() {
 		err = runAnnotate(os.Args[2], os.Args[3])
 	case len(os.Args) == 4 && os.Args[1] == "post":
 		err = runPost(os.Args[2], os.Args[3])
+	case len(os.Args) == 3 && os.Args[1] == "hook":
+		err = runHook(os.Stdin, os.Stdout, os.Args[2])
 	default:
-		err = errors.New("usage: resolve <MR IID or URL> | annotate <report markdown file> [feedback URL] | post <MR IID or URL> <report markdown file>")
+		err = errors.New("usage: resolve <MR IID or URL> | annotate <report markdown file> [feedback URL] | post <MR IID or URL> <report markdown file> | hook <plugin root> (as a PreToolUse hook)")
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "soundings-app-interface: %v\n", err)
