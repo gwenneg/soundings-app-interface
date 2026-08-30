@@ -6,33 +6,24 @@ import (
 	"io"
 )
 
-// preApprovedTools are this plugin's own MCP tools the hook pre-approves,
-// by their plugin-scoped names (mcp__plugin_<plugin>_<server>__<tool>).
-// This set is the permission policy: a tool listed here never raises an
-// interactive prompt. post is included by design - posting to the MR is
-// still gated by the skill's explicit in-session question (it never posts
-// without the user's yes), and user-configured deny/ask rules can restore
-// a harness prompt for any of these tools at any time.
+// preApprovedTools is the hook's permission policy: this plugin's own MCP
+// tools, by plugin-scoped name, that never raise an interactive prompt.
+// post is included by design - posting is still gated by the skill's
+// explicit in-session question, and user deny/ask rules can restore a
+// harness prompt for any of these tools.
 var preApprovedTools = map[string]bool{
 	"mcp__plugin_soundings-app-interface_helper__resolve":  true,
 	"mcp__plugin_soundings-app-interface_helper__annotate": true,
 	"mcp__plugin_soundings-app-interface_helper__post":     true,
 }
 
-// runHook implements the plugin's PreToolUse hook: pre-approve this
-// plugin's own helper MCP tools so a review run needs no prompts. The
-// skill's allowed-tools frontmatter constrains what the turn may use but
-// is not a permission grant, and a plugin cannot ship permission rules -
-// an explicit hook "allow" is the plugin-side mechanism that skips the
-// prompt.
-//
-// The hooks.json matcher already routes only these tools here, but matcher
-// anchoring is undocumented regex behavior and the matcher can drift when
-// edited - the exact-name check against preApprovedTools is the actual
-// security boundary.
-//
-// Everything else gets no opinion, leaving the session's normal permission
-// flow untouched.
+// runHook is the plugin's PreToolUse hook: emit "allow" for the tools in
+// preApprovedTools, nothing for anything else. The skill's allowed-tools
+// frontmatter is not a permission grant and a plugin cannot ship
+// permission rules, so this hook is what makes a review run prompt-free.
+// The hooks.json matcher routes only these tools here, but the exact-name
+// check is the security boundary - matcher regex anchoring is
+// undocumented, and a matcher edit must not widen the policy.
 func runHook(stdin io.Reader, stdout io.Writer) error {
 	var in struct {
 		ToolName string `json:"tool_name"`
