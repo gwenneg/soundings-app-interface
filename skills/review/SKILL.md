@@ -7,7 +7,8 @@ description: >-
   optionally post the report back to the MR. Use when the user asks to
   review, score, or assess an app-interface MR or deployment MR, or gives
   a gitlab.cee.redhat.com app-interface merge request URL or IID.
-allowed-tools: Skill, Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . resolve *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . annotate *), Bash(go -C ${CLAUDE_PLUGIN_ROOT} run . post *)
+allowed-tools: Skill, mcp__plugin_soundings-app-interface_helper__resolve, mcp__plugin_soundings-app-interface_helper__annotate, mcp__plugin_soundings-app-interface_helper__post
+disallowed-tools: Bash, Edit, NotebookEdit, Write, WebFetch, WebSearch
 ---
 
 # App-interface release review
@@ -16,7 +17,11 @@ You orchestrate a thin Red Hat-specific layer over the generic
 `soundings:analyze` skill: resolve the MR into compare URLs and guidance,
 delegate the entire analysis to soundings, then handle MR posting. You do
 not analyze anything yourself, and you never fetch diff content — the
-soundings pipeline (and its isolated assess stage) does that.
+soundings pipeline (and its isolated assess stage) does that. Everything
+deterministic happens in this plugin's helper MCP server tools; this
+skill's frontmatter disallows shell, write, edit, and network tools for
+the turn — a harness-enforced guarantee that a review cannot be steered
+into running commands or touching files.
 
 Input, from `$ARGUMENTS`: an app-interface MR IID (a number) or a full MR
 URL. If neither was provided, ask — do not guess. Requirements: the
@@ -28,11 +33,17 @@ skip option.
 
 ## Step 1 — resolve the MR
 
-Run the resolver (read-only: it only lists MR notes):
+Call the `resolve` tool from this plugin's helper MCP server
+(`mcp__plugin_soundings-app-interface_helper__resolve`; read-only: it only
+lists MR notes):
 
-    go -C ${CLAUDE_PLUGIN_ROOT} run . resolve <IID or URL>
+    resolve({ "mr": <IID or URL> })
 
-It prints one JSON object: `mr_url`, `diff_urls` (from the newest
+If the helper tools are unavailable, stop and say the
+soundings-app-interface plugin must be installed — do not substitute
+shell commands or other tools.
+
+The result is one JSON object: `mr_url`, `diff_urls` (from the newest
 devtools-bot `Diffs:` comment), `guidance` (all `/soundings note`
 comments on the MR — app-interface guidance is pre-authorized because
 the MR itself is permission-gated), and, when the
@@ -63,14 +74,13 @@ you. Let soundings run its full pipeline; do not intervene in it.
 
 ## Step 3 — annotate and offer to post the report
 
-Run the annotator on the report file soundings wrote at `report_path` —
-do not write or edit the file yourself (read/write, local to that file
-only — it never touches the MR):
+Call the `annotate` tool on the report file soundings wrote at
+`report_path` — do not write or edit the file yourself (local to that
+file only — it never touches the MR):
 
-    go -C ${CLAUDE_PLUGIN_ROOT} run . annotate <report file> [feedback_url]
+    annotate({ "report_path": <report file>, "feedback_url": <only when the resolver emitted one> })
 
-Pass `feedback_url` as the second argument only when the resolver emitted
-one. This inserts, in place:
+This inserts, in place:
 
 - app-interface's override-justification banner (`/soundings override
   <justification>`, for the audit trail) when the recommendation is
@@ -81,13 +91,13 @@ Soundings itself has no notion of either convention — both are
 app-interface's alone. Re-read the file and show the (possibly
 annotated) report to the user, then use the AskUserQuestion tool to ask
 whether to post it to the MR — never post without an explicit yes in
-this session. To post:
+this session. To post, call the `post` tool:
 
-    go -C ${CLAUDE_PLUGIN_ROOT} run . post <IID or URL> <report file>
+    post({ "mr": <IID or URL>, "report_path": <report file> })
 
 It posts a NEW comment (never edits a previous one — re-runs keep an
 audit trail of how the score evolved) under the identity of the user's
-own token, and prints the comment URL; relay that URL to the user.
+own token, and returns the comment URL; relay that URL to the user.
 
 Re-runs are safe by construction: the resolver always reads the MR's
 current state, so after new commits a fresh invocation picks up the

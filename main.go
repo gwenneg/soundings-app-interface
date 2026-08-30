@@ -1,5 +1,8 @@
 // Command soundings-app-interface is the deterministic helper behind the
-// soundings-app-interface Claude Code plugin. Three subcommands:
+// soundings-app-interface Claude Code plugin. With no arguments it runs as
+// an MCP server over stdio exposing the resolve, annotate, and post tools
+// (see mcp.go); the same operations are also available as subcommands for
+// local use:
 //
 //	resolve <MR IID or URL>          Resolve an app-interface MR into
 //	                                 soundings inputs: the compare URLs from
@@ -25,12 +28,11 @@
 //	                                 re-runs keep an audit trail. Prints the
 //	                                 posted comment's URL.
 //
-//	hook <plugin root>               Run as a Claude Code PreToolUse hook:
-//	                                 pre-approve Bash invocations of this
-//	                                 plugin's own resolve and annotate
-//	                                 subcommands (post stays gated - it is
-//	                                 the one outward-facing action). See
-//	                                 hook.go.
+//	hook                             Run as a Claude Code PreToolUse hook:
+//	                                 pre-approve this plugin's own resolve
+//	                                 and annotate MCP tools (post stays
+//	                                 gated - it is the one outward-facing
+//	                                 action). See hook.go.
 //
 // GitLab access uses the official Go SDK, authenticated by GITLAB_TOKEN -
 // the user's own personal access token, so everything happens under their
@@ -54,6 +56,9 @@ import (
 
 	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
+
+// pluginVersion mirrors .claude-plugin/plugin.json; bump both together.
+const pluginVersion = "0.4.0"
 
 const (
 	project     = "service/app-interface"
@@ -86,6 +91,12 @@ func main() {
 
 	var err error
 	switch {
+	case len(os.Args) == 1:
+		err = runMCP()
+		// stdin closing is the normal way a stdio MCP session ends
+		if err != nil && strings.Contains(err.Error(), "EOF") {
+			err = nil
+		}
 	case len(os.Args) == 3 && os.Args[1] == "resolve":
 		err = runResolve(os.Args[2])
 	case len(os.Args) == 3 && os.Args[1] == "annotate":
@@ -94,10 +105,10 @@ func main() {
 		err = runAnnotate(os.Args[2], os.Args[3])
 	case len(os.Args) == 4 && os.Args[1] == "post":
 		err = runPost(os.Args[2], os.Args[3])
-	case len(os.Args) == 3 && os.Args[1] == "hook":
-		err = runHook(os.Stdin, os.Stdout, os.Args[2])
+	case len(os.Args) == 2 && os.Args[1] == "hook":
+		err = runHook(os.Stdin, os.Stdout)
 	default:
-		err = errors.New("usage: resolve <MR IID or URL> | annotate <report markdown file> [feedback URL] | post <MR IID or URL> <report markdown file> | hook <plugin root> (as a PreToolUse hook)")
+		err = errors.New("usage: no arguments (stdio MCP server) | resolve <MR IID or URL> | annotate <report markdown file> [feedback URL] | post <MR IID or URL> <report markdown file> | hook (as a PreToolUse hook)")
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "soundings-app-interface: %v\n", err)
@@ -152,41 +163,50 @@ type resolveOutput struct {
 }
 
 func runResolve(mrArg string) error {
-	host, iid, err := parseMRArg(mrArg, envHost())
+	out, err := doResolve(mrArg)
 	if err != nil {
 		return err
+	}
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(out)
+}
+
+// doResolve is the core of the resolve operation, shared by the CLI and
+// the MCP server.
+func doResolve(mrArg string) (*resolveOutput, error) {
+	host, iid, err := parseMRArg(mrArg, envHost())
+	if err != nil {
+		return nil, err
 	}
 	mrURL := fmt.Sprintf("https://%s/%s/-/merge_requests/%d", host, project, iid)
 	slog.Info("Resolving app-interface MR", "mr_iid", iid, "host", host)
 
 	client, err := newGitLabClient(host)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	notes, err := fetchNotes(client, host, iid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	diffURLs, err := extractDiffURLs(notes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	guidance := extractGuidance(notes, mrURL)
-	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
+	out := &resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
 	out.FeedbackURL = os.Getenv("SOUNDINGS_FEEDBACK_URL")
 	if out.AutoDeploy, err = envThreshold("SOUNDINGS_AUTO_DEPLOY_THRESHOLD"); err != nil {
-		return err
+		return nil, err
 	}
 	if out.ReviewRequired, err = envThreshold("SOUNDINGS_REVIEW_REQUIRED_THRESHOLD"); err != nil {
-		return err
+		return nil, err
 	}
 	if err := validateThresholdOrder(out.AutoDeploy, out.ReviewRequired); err != nil {
-		return err
+		return nil, err
 	}
-
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	return enc.Encode(out)
+	return out, nil
 }
 
 // runAnnotate inserts app-interface's own report additions - the
@@ -194,15 +214,25 @@ func runResolve(mrArg string) error {
 // link - into a rendered soundings report, in place. Soundings itself has
 // no notion of either convention; both are entirely app-interface's own.
 func runAnnotate(reportPath, feedbackURL string) error {
+	_, err := doAnnotate(reportPath, feedbackURL)
+	return err
+}
+
+// doAnnotate is the core of the annotate operation, shared by the CLI and
+// the MCP server. It reports whether the file was modified.
+func doAnnotate(reportPath, feedbackURL string) (bool, error) {
 	body, err := os.ReadFile(reportPath)
 	if err != nil {
-		return fmt.Errorf("cannot read report file: %w", err)
+		return false, fmt.Errorf("cannot read report file: %w", err)
 	}
 	annotated := annotateReport(string(body), feedbackURL)
 	if annotated == string(body) {
-		return nil
+		return false, nil
 	}
-	return os.WriteFile(reportPath, []byte(annotated), 0o644)
+	if err := os.WriteFile(reportPath, []byte(annotated), 0o644); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // annotateReport is the pure text transform behind runAnnotate. It is
@@ -244,31 +274,41 @@ func insertFeedbackLink(markdown, feedbackURL string) string {
 }
 
 func runPost(mrArg, reportPath string) error {
-	host, iid, err := parseMRArg(mrArg, envHost())
+	url, err := doPost(mrArg, reportPath)
 	if err != nil {
 		return err
 	}
+	fmt.Println(url)
+	return nil
+}
+
+// doPost is the core of the post operation, shared by the CLI and the MCP
+// server. It returns the posted comment's URL.
+func doPost(mrArg, reportPath string) (string, error) {
+	host, iid, err := parseMRArg(mrArg, envHost())
+	if err != nil {
+		return "", err
+	}
 	body, err := os.ReadFile(reportPath)
 	if err != nil {
-		return fmt.Errorf("cannot read report file: %w", err)
+		return "", fmt.Errorf("cannot read report file: %w", err)
 	}
 	text := string(body)
 	if strings.TrimSpace(text) == "" {
-		return errors.New("report file is empty - refusing to post an empty comment")
+		return "", errors.New("report file is empty - refusing to post an empty comment")
 	}
 
 	client, err := newGitLabClient(host)
 	if err != nil {
-		return err
+		return "", err
 	}
 	posted, _, err := client.Notes.CreateMergeRequestNote(project, iid,
 		&gitlab.CreateMergeRequestNoteOptions{Body: &text})
 	if err != nil {
-		return fmt.Errorf("posting comment failed: %w", classifyErr(host, err))
+		return "", fmt.Errorf("posting comment failed: %w", classifyErr(host, err))
 	}
 	slog.Info("Report posted to merge request", "mr_iid", iid)
-	fmt.Printf("https://%s/%s/-/merge_requests/%d#note_%d\n", host, project, iid, posted.ID)
-	return nil
+	return fmt.Sprintf("https://%s/%s/-/merge_requests/%d#note_%d", host, project, iid, posted.ID), nil
 }
 
 // newGitLabClient builds an SDK client for one host, authenticated by the
