@@ -38,7 +38,7 @@ func runMCP() error {
 		Name: "annotate",
 		Description: "Insert app-interface's own additions into a rendered soundings report " +
 			"file, in place: the override-justification banner when the recommendation is " +
-			"RELEASE NOT RECOMMENDED, and the compliance-mandated feedback link when a " +
+			"RELEASE NOT RECOMMENDED, and the feedback link when a " +
 			"feedback URL is given. Both are no-ops when their condition doesn't apply, and " +
 			"idempotent if run twice. Local to that file only - it never touches the MR.",
 	}, annotateTool)
@@ -71,7 +71,7 @@ func resolveTool(ctx context.Context, req *mcp.CallToolRequest, in resolveToolIn
 
 type annotateToolInput struct {
 	ReportPath  string `json:"report_path" jsonschema:"path to the rendered soundings report markdown file to annotate in place"`
-	FeedbackURL string `json:"feedback_url,omitempty" jsonschema:"compliance-mandated feedback link to insert; only when the resolver emitted one"`
+	FeedbackURL string `json:"feedback_url,omitempty" jsonschema:"feedback link to insert; only when the resolver emitted one"`
 }
 
 type annotateToolOutput struct {
