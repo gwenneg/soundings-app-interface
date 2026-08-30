@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__plugin_soundings-app-interface_helper__resolve|mcp__plugin_soundings-app-interface_helper__annotate",
+        "matcher": "mcp__plugin_soundings-app-interface_helper__resolve|mcp__plugin_soundings-app-interface_helper__annotate|mcp__plugin_soundings-app-interface_helper__post",
         "hooks": [
           {
             "type": "command",

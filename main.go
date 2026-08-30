@@ -29,10 +29,9 @@
 //	                                 posted comment's URL.
 //
 //	hook                             Run as a Claude Code PreToolUse hook:
-//	                                 pre-approve this plugin's own resolve
-//	                                 and annotate MCP tools (post stays
-//	                                 gated - it is the one outward-facing
-//	                                 action). See hook.go.
+//	                                 pre-approve this plugin's own MCP
+//	                                 tools (resolve, annotate, post). See
+//	                                 hook.go.
 //
 // GitLab access uses the official Go SDK, authenticated by GITLAB_TOKEN -
 // the user's own personal access token, so everything happens under their
@@ -58,7 +57,7 @@ import (
 )
 
 // pluginVersion mirrors .claude-plugin/plugin.json; bump both together.
-const pluginVersion = "0.4.0"
+const pluginVersion = "0.5.0"
 
 const (
 	project     = "service/app-interface"

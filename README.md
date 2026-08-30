@@ -59,14 +59,15 @@ Write, and Edit outright — the model orchestrates, the helper executes.
 
 ## Permission prompts
 
-A review run is prompt-free except for posting: soundings pre-approves
-its own pipeline and writes the report file itself (via `report_path`),
-and this plugin ships a PreToolUse hook that pre-approves its own
-`resolve` and `annotate` tools by exact name. User-configured deny/ask
-rules always override the approval. `post` is deliberately NOT
-pre-approved: it is the one outward-facing action, so posting the report
-to the MR always asks — both the skill's explicit question and the
-harness prompt.
+A review run is fully prompt-free: soundings pre-approves its own
+pipeline and writes the report file itself (via `report_path`), and this
+plugin ships a PreToolUse hook that pre-approves its own `resolve`,
+`annotate`, and `post` tools by exact name. Posting to the MR — the one
+outward-facing action — is still gated by the skill's explicit
+in-session question: it never posts without your yes. User-configured
+deny/ask rules always override the approval, so add
+`mcp__plugin_soundings-app-interface_helper__post` to your `ask` rules if
+you want a harness prompt back on posting.
 
 ## How it relates to soundings
 
