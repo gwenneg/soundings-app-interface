@@ -1,7 +1,12 @@
-# Soundings App-interface
+# Soundings - App-interface adapter
 
-Release confidence analysis for Red Hat [app-interface](https://gitlab.cee.redhat.com/service/app-interface)
-merge requests. This is a thin, Red Hat-specific plugin built on top of
+**Take soundings before you ship.** Sailors have long measured the
+water's [depth](https://en.wikipedia.org/wiki/Depth_sounding) ahead
+before committing a ship to a course; this plugin does the same for a
+Red Hat [app-interface](https://gitlab.cee.redhat.com/service/app-interface)
+deployment merge request, before you commit it to production.
+
+It's a thin, Red Hat-specific adapter over
 [Soundings](https://github.com/gwenneg/soundings), the general-purpose
 Claude Code skill that scores the release risk of any GitHub or GitLab
 diff.
@@ -44,7 +49,7 @@ conventions all appear in the public
 
 ## Install
 
-soundings-app-interface is distributed through a Claude Code
+This plugin is distributed through a Claude Code
 [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces)
 — no cloning or file editing. In Claude Code:
 
