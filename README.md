@@ -49,26 +49,20 @@ conventions all appear in the public
 
 ## Install
 
-This plugin is distributed through a Claude Code
-[plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces)
-— no cloning or file editing. In Claude Code:
+Both this plugin and Soundings are distributed through the
+[claude-ichiba](https://github.com/gwenneg/claude-ichiba) marketplace —
+no cloning or file editing. In Claude Code:
 
 ```
-/plugin marketplace add gwenneg/soundings-app-interface
-/plugin install soundings-app-interface@soundings-app-interface
+/plugin marketplace add gwenneg/claude-ichiba
+/plugin install soundings-app-interface@claude-ichiba
+/plugin install soundings@claude-ichiba
 /reload-plugins
 ```
 
 This plugin only resolves the app-interface MR and posts the report; the
-analysis itself is delegated to Soundings, a separate plugin from a
-separate marketplace that must be installed too (see
-[Requirements](#requirements) for the minimum version):
-
-```
-/plugin marketplace add gwenneg/soundings
-/plugin install soundings@soundings
-/reload-plugins
-```
+analysis itself is delegated to Soundings, which must be installed too
+(see [Requirements](#requirements) for the minimum version).
 
 ## Staying up to date
 
@@ -77,14 +71,13 @@ soundings-app-interface release can rely on a Soundings feature or fix
 that an older installed copy doesn't have yet:
 
 ```
-/plugin marketplace update soundings-app-interface
-/plugin marketplace update soundings
+/plugin marketplace update claude-ichiba
 /reload-plugins
 ```
 
-Or enable auto-update for both once — `/plugin` → **Marketplaces** →
-select each marketplace → **Enable auto-update** — and Claude Code
-refreshes them at startup and notifies you when either updates
+Or enable auto-update once — `/plugin` → **Marketplaces** → select
+`claude-ichiba` → **Enable auto-update** — and Claude Code refreshes it
+at startup and notifies you when either plugin updates
 ([plugin docs](https://code.claude.com/docs/en/discover-plugins#configure-auto-updates)).
 
 ## Security model
