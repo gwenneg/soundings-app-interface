@@ -12,8 +12,8 @@ Claude Code skill that assesses the release risk of any GitHub or
 GitLab diff.
 
 ```
-/soundings-app-interface:review 12345
-/soundings-app-interface:review https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/12345
+/soundings-app-interface:analyze 12345
+/soundings-app-interface:analyze https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/12345
 ```
 
 Point it at an app-interface deployment MR and it resolves the MR's
