@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "soundings-app-interface",
   "displayName": "Soundings App-interface",
-  "description": "Release confidence analysis for Red Hat app-interface merge requests: resolves the deployment MR's compare URLs from the devtools-bot comment, runs the soundings analysis across all of them together, and optionally posts the report back to the MR. Requires the soundings plugin, a GITLAB_TOKEN for the app-interface GitLab, and VPN access to run.",
+  "description": "Take soundings before you ship an app-interface deployment. Point it at a Red Hat app-interface MR and it resolves the compare URLs from the newest devtools-bot Diffs comment, runs one soundings analysis across all of them together - one clear release verdict, with compound risks across repositories caught - annotates the report with app-interface's override-justification and feedback conventions, and offers to post it back to the MR as a new comment under your own identity. Red Hat internal: requires the soundings plugin (0.6.0 or later), a GITLAB_TOKEN for the app-interface GitLab host, and VPN access.",
   "author": {
     "name": "Gwenneg Lepage",
     "url": "https://github.com/gwenneg"
