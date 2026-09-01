@@ -196,34 +196,22 @@ func TestFromSDK(t *testing.T) {
 	}
 }
 
-func TestEnvThreshold(t *testing.T) {
-	t.Setenv("X_THRESHOLD", "0")
-	n, err := envThreshold("X_THRESHOLD")
-	if err != nil || n == nil || *n != 0 {
-		t.Fatalf("explicit 0 must survive, got %v, %v", n, err)
+func TestEnvBlockOn(t *testing.T) {
+	t.Setenv("X_BLOCK_ON", "high")
+	v, err := envBlockOn("X_BLOCK_ON")
+	if err != nil || v != "high" {
+		t.Fatalf("valid severity must survive, got %q, %v", v, err)
 	}
-	t.Setenv("X_THRESHOLD", "101")
-	if _, err := envThreshold("X_THRESHOLD"); err == nil {
-		t.Fatal("out-of-range threshold must fail")
+	t.Setenv("X_BLOCK_ON", "")
+	if v, err := envBlockOn("X_BLOCK_ON"); err != nil || v != "" {
+		t.Fatalf("unset must mean the soundings default, got %q, %v", v, err)
 	}
-}
-
-func TestValidateThresholdOrder(t *testing.T) {
-	ptr := func(n int) *int { return &n }
-
-	if err := validateThresholdOrder(nil, nil); err != nil {
-		t.Errorf("both unset must not error, got %v", err)
+	t.Setenv("X_BLOCK_ON", "low")
+	if _, err := envBlockOn("X_BLOCK_ON"); err == nil {
+		t.Fatal("low is not a valid blocking severity and must fail")
 	}
-	if err := validateThresholdOrder(ptr(80), nil); err != nil {
-		t.Errorf("one unset must not error, got %v", err)
-	}
-	if err := validateThresholdOrder(ptr(80), ptr(60)); err != nil {
-		t.Errorf("auto-deploy >= review-required must not error, got %v", err)
-	}
-	if err := validateThresholdOrder(ptr(80), ptr(80)); err != nil {
-		t.Errorf("equal thresholds must not error, got %v", err)
-	}
-	if err := validateThresholdOrder(ptr(60), ptr(80)); err == nil {
-		t.Fatal("swapped thresholds (auto-deploy < review-required) must error")
+	t.Setenv("X_BLOCK_ON", "80")
+	if _, err := envBlockOn("X_BLOCK_ON"); err == nil {
+		t.Fatal("a legacy numeric threshold must fail")
 	}
 }

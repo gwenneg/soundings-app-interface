@@ -8,8 +8,8 @@ deployment merge request, before you commit it to production.
 
 It's a thin, Red Hat-specific adapter over
 [Soundings](https://github.com/gwenneg/soundings), the general-purpose
-Claude Code skill that scores the release risk of any GitHub or GitLab
-diff.
+Claude Code skill that assesses the release risk of any GitHub or
+GitLab diff.
 
 ```
 /soundings-app-interface:review 12345
@@ -109,7 +109,7 @@ every design decision below follows from that:
   itself applies to diff and comment content it fetches.
 - **Posting is append-only and always opt-in.** `post` creates a *new*
   comment and can never edit or delete a previous one, so re-running a
-  review keeps an honest audit trail of how the score evolved. It's also
+  review keeps an honest audit trail of how the verdict evolved. It's also
   the one outward-facing action, so the skill is instructed to always ask
   you explicitly, in plain language, before ever calling it — independent
   of and in addition to whatever the harness's own permission prompts do.
@@ -137,7 +137,7 @@ every design decision below follows from that:
 ## Requirements
 
 - The [Soundings](https://github.com/gwenneg/soundings) plugin, version
-  0.4.0 or later (and its Go toolchain requirement — this helper runs via
+  0.6.0 or later (and its Go toolchain requirement — this helper runs via
   `go run` too)
 - `GITLAB_TOKEN` set to your personal access token (api scope) for the
   app-interface GitLab host — also what Soundings uses to fetch the
@@ -154,8 +154,7 @@ verification are handled.
 | `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
 | `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
 | `SOUNDINGS_FEEDBACK_URL` | feedback link, inserted into the report by `annotate` when set | none |
-| `SOUNDINGS_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | Soundings default (80) |
-| `SOUNDINGS_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | Soundings default (60) |
+| `SOUNDINGS_BLOCK_ON` | severity at/above which a concern blocks the release (`critical`, `high`, or `medium`; one level below means manual review) | Soundings default (`critical`) |
 
 ## Helper MCP server
 
@@ -183,17 +182,17 @@ approval.
 ## How it relates to Soundings
 
 Everything Red Hat-specific lives here: the MR→compare-URL resolution,
-the pre-authorized guidance convention, the thresholds plumbing, the
+the pre-authorized guidance convention, the `block_on` plumbing, the
 override-justification report banner and the feedback link (both
 inserted by this helper's own `annotate`
 subcommand), and MR posting. The analysis itself — fetching, the
-isolated assessment, scoring, rendering — is entirely Soundings, invoked
-by name with a documented parameter contract. Soundings never knows the
-inputs came from app-interface.
+isolated assessment, the verdict computation, rendering — is entirely
+Soundings, invoked by name with a documented parameter contract.
+Soundings never knows the inputs came from app-interface.
 
 Re-running on the same MR after new commits is safe and intended: the
 resolver always reads the MR's current state, and each run posts a new
-comment, keeping an audit trail of how the score evolved.
+comment, keeping an audit trail of how the verdict evolved.
 
 ## Provenance
 

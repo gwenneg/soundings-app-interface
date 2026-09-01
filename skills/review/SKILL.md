@@ -1,7 +1,7 @@
 ---
 name: review
 description: >-
-  Analyze an app-interface merge request for release confidence: resolve
+  Analyze an app-interface merge request for release readiness: resolve
   the deployment MR's compare URLs from the devtools-bot comment, run the
   soundings release risk analysis across all of them together, and
   optionally post the report back to the MR. Use when the user asks to
@@ -47,8 +47,8 @@ The result is one JSON object: `mr_url`, `diff_urls` (from the newest
 devtools-bot `Diffs:` comment), `guidance` (all `/soundings note`
 comments on the MR — app-interface guidance is pre-authorized because
 the MR itself is permission-gated), and, when the
-corresponding env vars are set, `feedback_url`, `auto_deploy`, and
-`review_required`.
+corresponding env vars are set, `feedback_url` and `block_on` (the
+severity at or above which a concern blocks the release).
 
 On failure, relay the helper's distinction: VPN unreachable vs. a bad or
 missing `GITLAB_TOKEN` vs. a TLS trust failure (install the host's CA in
@@ -62,7 +62,7 @@ Invoke the `soundings:analyze` skill by name, passing in the invocation
 text: ALL `diff_urls` in one invocation (never one at a time — compound
 risks across the repos are only visible to a single combined analysis),
 the `guidance` array verbatim as pre-authorized extra guidance entries,
-the thresholds only when the resolver emitted them, and a `report_path`:
+`block_on` only when the resolver emitted it, and a `report_path`:
 an ABSOLUTE path ending in `.md` in the session's working directory, e.g.
 `<working directory>/soundings-report-<MR IID>.md`. The soundings helper
 writes the rendered report there itself — you never write the report file.
@@ -96,7 +96,7 @@ this session. To post, call the `post` tool:
     post({ "mr": <IID or URL>, "report_path": <report file> })
 
 It posts a NEW comment (never edits a previous one — re-runs keep an
-audit trail of how the score evolved) under the identity of the user's
+audit trail of how the verdict evolved) under the identity of the user's
 own token, and returns the comment URL; relay that URL to the user.
 
 Re-runs are safe by construction: the resolver always reads the MR's
