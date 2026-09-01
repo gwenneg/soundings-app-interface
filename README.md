@@ -1,6 +1,6 @@
 # Soundings App-interface
 
-Release confidence analysis for Red Hat [app-interface](https://gitlab.cee.redhat.com/service/app-interface)
+Release readiness analysis for Red Hat [app-interface](https://gitlab.cee.redhat.com/service/app-interface)
 merge requests, built on [soundings](https://github.com/gwenneg/soundings).
 
 ```
@@ -40,9 +40,8 @@ your machine is used automatically.
 |---|---|---|
 | `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
 | `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
-| `APP_INTERFACE_FEEDBACK_URL` | feedback link embedded in the report | none |
-| `APP_INTERFACE_AUTO_DEPLOY_THRESHOLD` | score at/above which release is recommended | soundings default (80) |
-| `APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD` | score at/above which review (instead of no-go) is recommended | soundings default (60) |
+| `SOUNDINGS_FEEDBACK_URL` | feedback link embedded in the report | none |
+| `SOUNDINGS_BLOCK_ON` | severity at/above which a concern blocks the release (`critical`, `high`, or `medium`; one level below means manual review) | soundings default (`critical`) |
 
 Authentication is your own personal token, and reports are posted under
 its identity — there is no shared service account.
@@ -50,15 +49,16 @@ its identity — there is no shared service account.
 ## How it relates to soundings
 
 Everything Red Hat-specific lives here: the MR→compare-URL resolution,
-the pre-authorized guidance convention, the thresholds/feedback plumbing,
+the pre-authorized guidance convention, the block_on/feedback plumbing,
 the `app_interface_mode` report banner, and MR posting. The analysis
-itself — fetching, the isolated assessment, scoring, rendering — is
-entirely soundings, invoked by name with a documented parameter contract.
-Soundings never knows the inputs came from app-interface.
+itself — fetching, the isolated assessment, the verdict computation,
+rendering — is entirely soundings, invoked by name with a documented
+parameter contract. Soundings never knows the inputs came from
+app-interface.
 
 Re-running on the same MR after new commits is safe and intended: the
 resolver always reads the MR's current state, and each run posts a new
-comment, keeping an audit trail of how the score evolved.
+comment, keeping an audit trail of how the verdict evolved.
 
 ## Provenance
 

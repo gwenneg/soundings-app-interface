@@ -122,14 +122,22 @@ func TestFromSDK(t *testing.T) {
 	}
 }
 
-func TestEnvThreshold(t *testing.T) {
-	t.Setenv("X_THRESHOLD", "0")
-	n, err := envThreshold("X_THRESHOLD")
-	if err != nil || n == nil || *n != 0 {
-		t.Fatalf("explicit 0 must survive, got %v, %v", n, err)
+func TestEnvBlockOn(t *testing.T) {
+	t.Setenv("X_BLOCK_ON", "high")
+	v, err := envBlockOn("X_BLOCK_ON")
+	if err != nil || v != "high" {
+		t.Fatalf("valid severity must survive, got %q, %v", v, err)
 	}
-	t.Setenv("X_THRESHOLD", "101")
-	if _, err := envThreshold("X_THRESHOLD"); err == nil {
-		t.Fatal("out-of-range threshold must fail")
+	t.Setenv("X_BLOCK_ON", "")
+	if v, err := envBlockOn("X_BLOCK_ON"); err != nil || v != "" {
+		t.Fatalf("unset must mean the soundings default, got %q, %v", v, err)
+	}
+	t.Setenv("X_BLOCK_ON", "low")
+	if _, err := envBlockOn("X_BLOCK_ON"); err == nil {
+		t.Fatal("low is not a valid blocking severity and must fail")
+	}
+	t.Setenv("X_BLOCK_ON", "80")
+	if _, err := envBlockOn("X_BLOCK_ON"); err == nil {
+		t.Fatal("a legacy numeric threshold must fail")
 	}
 }

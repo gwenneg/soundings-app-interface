@@ -7,7 +7,7 @@
 //	                                 comment, the MR's "/soundings note"
 //	                                 guidance comments (pre-authorized - the
 //	                                 MR itself is permission-gated), and any
-//	                                 configured thresholds/feedback URL.
+//	                                 configured block_on policy/feedback URL.
 //	                                 Prints one JSON object.
 //
 //	post <MR IID or URL> <file>      Post a report markdown file to the MR
@@ -87,12 +87,11 @@ type guidanceEntry struct {
 }
 
 type resolveOutput struct {
-	MRURL          string          `json:"mr_url"`
-	DiffURLs       []string        `json:"diff_urls"`
-	Guidance       []guidanceEntry `json:"guidance"`
-	FeedbackURL    string          `json:"feedback_url,omitempty"`
-	AutoDeploy     *int            `json:"auto_deploy,omitempty"`
-	ReviewRequired *int            `json:"review_required,omitempty"`
+	MRURL       string          `json:"mr_url"`
+	DiffURLs    []string        `json:"diff_urls"`
+	Guidance    []guidanceEntry `json:"guidance"`
+	FeedbackURL string          `json:"feedback_url,omitempty"`
+	BlockOn     string          `json:"block_on,omitempty"`
 }
 
 func runResolve(mrArg string) error {
@@ -115,11 +114,8 @@ func runResolve(mrArg string) error {
 		return err
 	}
 	out := resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: extractGuidance(notes, mrURL)}
-	out.FeedbackURL = os.Getenv("APP_INTERFACE_FEEDBACK_URL")
-	if out.AutoDeploy, err = envThreshold("APP_INTERFACE_AUTO_DEPLOY_THRESHOLD"); err != nil {
-		return err
-	}
-	if out.ReviewRequired, err = envThreshold("APP_INTERFACE_REVIEW_REQUIRED_THRESHOLD"); err != nil {
+	out.FeedbackURL = os.Getenv("SOUNDINGS_FEEDBACK_URL")
+	if out.BlockOn, err = envBlockOn("SOUNDINGS_BLOCK_ON"); err != nil {
 		return err
 	}
 
@@ -289,14 +285,14 @@ func envHost() string {
 	return defaultHost
 }
 
-func envThreshold(name string) (*int, error) {
-	v := os.Getenv(name)
-	if v == "" {
-		return nil, nil
+// envBlockOn reads the soundings block_on policy - the severity at or
+// above which a concern blocks the release - from the named env var.
+// Empty means "let soundings use its default".
+func envBlockOn(name string) (string, error) {
+	switch v := os.Getenv(name); v {
+	case "", "critical", "high", "medium":
+		return v, nil
+	default:
+		return "", fmt.Errorf("%s must be one of critical, high, medium, got %q", name, v)
 	}
-	n, err := strconv.Atoi(v)
-	if err != nil || n < 0 || n > 100 {
-		return nil, fmt.Errorf("%s must be an integer between 0 and 100, got %q", name, v)
-	}
-	return &n, nil
 }
