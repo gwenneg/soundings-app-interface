@@ -1,5 +1,5 @@
 ---
-name: review
+name: analyze
 description: >-
   Analyze an app-interface merge request for release readiness: resolve
   the deployment MR's compare URLs from the devtools-bot comment, run the
@@ -11,7 +11,7 @@ allowed-tools: Skill, mcp__plugin_soundings-app-interface_helper__resolve, mcp__
 disallowed-tools: Bash, Edit, NotebookEdit, Write, WebFetch, WebSearch
 ---
 
-# App-interface release review
+# App-interface release analysis
 
 You orchestrate a thin Red Hat-specific layer over the generic
 `soundings:analyze` skill: resolve the MR into compare URLs and guidance,
