@@ -24,6 +24,12 @@ across all compare URLs together** (so compound risks across
 repositories are detected), and offers to post the report back to the
 MR as a new comment under your own identity.
 
+The skill only runs when you invoke it explicitly with the slash command
+above (`disable-model-invocation: true` in its frontmatter). Claude will
+not start it on its own when you mention an app-interface MR - most
+app-interface MRs are not deployment MRs, and a plain MR review should
+stay a plain review.
+
 ## Who this is for
 
 [Soundings](https://github.com/gwenneg/soundings) is the core project:
