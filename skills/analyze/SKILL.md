@@ -1,12 +1,14 @@
 ---
 name: analyze
 description: >-
-  Analyze an app-interface merge request for release readiness: resolve
-  the deployment MR's compare URLs from the devtools-bot comment, run the
-  soundings release risk analysis across all of them together, and
-  optionally post the report back to the MR. Use when the user asks to
-  review, score, or assess an app-interface MR or deployment MR, or gives
-  a gitlab.cee.redhat.com app-interface merge request URL or IID.
+  Analyze an app-interface deployment merge request for release
+  readiness: resolve the MR's compare URLs from the devtools-bot comment,
+  run the soundings release risk analysis across all of them together,
+  and optionally post the report back to the MR. Invoked explicitly by
+  the user with /soundings-app-interface:analyze <MR IID or URL>; never
+  auto-triggered by the model, since most app-interface MRs are not
+  deployment MRs.
+disable-model-invocation: true
 allowed-tools: Skill, mcp__plugin_soundings-app-interface_helper__resolve, mcp__plugin_soundings-app-interface_helper__annotate, mcp__plugin_soundings-app-interface_helper__post
 disallowed-tools: Bash, Edit, NotebookEdit, Write, WebFetch, WebSearch
 ---
