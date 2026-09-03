@@ -20,9 +20,8 @@ import (
 // is inert at rest.
 func runMCP() error {
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "soundings-app-interface",
-		Title:   "Soundings app-interface helper",
-		Version: pluginVersion,
+		Name:  "soundings-app-interface",
+		Title: "Soundings app-interface helper",
 	}, nil)
 
 	mcp.AddTool(server, &mcp.Tool{

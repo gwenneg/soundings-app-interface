@@ -56,9 +56,6 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
-// pluginVersion mirrors .claude-plugin/plugin.json; bump both together.
-const pluginVersion = "0.5.0"
-
 const (
 	project     = "service/app-interface"
 	botUsername = "devtools-bot"
