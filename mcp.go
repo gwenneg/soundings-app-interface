@@ -75,18 +75,19 @@ type annotateToolInput struct {
 }
 
 type annotateToolOutput struct {
-	Modified bool `json:"modified" jsonschema:"whether the file was changed (false when no annotation condition applied or the annotations were already present)"`
+	Modified        bool   `json:"modified" jsonschema:"whether the file was changed (false when no annotation condition applied or the annotations were already present)"`
+	SummaryMarkdown string `json:"summary_markdown" jsonschema:"the annotated report's opening section (banner, summary, recommendation, what drove it, and the override banner when inserted), cut verbatim from the file; what to show before offering to post"`
 }
 
 func annotateTool(ctx context.Context, req *mcp.CallToolRequest, in annotateToolInput) (*mcp.CallToolResult, *annotateToolOutput, error) {
 	if in.ReportPath == "" {
 		return nil, nil, errors.New("report_path is required")
 	}
-	modified, err := doAnnotate(in.ReportPath, in.FeedbackURL)
+	summary, modified, err := doAnnotate(in.ReportPath, in.FeedbackURL)
 	if err != nil {
 		return nil, nil, err
 	}
-	return nil, &annotateToolOutput{Modified: modified}, nil
+	return nil, &annotateToolOutput{Modified: modified, SummaryMarkdown: summary}, nil
 }
 
 type postToolInput struct {
