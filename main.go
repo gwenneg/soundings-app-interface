@@ -206,25 +206,42 @@ func doResolve(mrArg string) (*resolveOutput, error) {
 // soundings report, in place. Soundings itself has no notion of either
 // convention; both are entirely app-interface's own.
 func runAnnotate(reportPath, feedbackURL string) error {
-	_, err := doAnnotate(reportPath, feedbackURL)
+	_, _, err := doAnnotate(reportPath, feedbackURL)
 	return err
 }
 
 // doAnnotate is the core of the annotate operation, shared by the CLI and
-// the MCP server. It reports whether the file was modified.
-func doAnnotate(reportPath, feedbackURL string) (bool, error) {
+// the MCP server. It annotates the report file in place, reports whether
+// the file was modified, and returns the (possibly annotated) report's
+// opening section - see summarySection - so the skill can show the
+// verdict as it will be posted, override banner included, without
+// restating it.
+func doAnnotate(reportPath, feedbackURL string) (summary string, modified bool, err error) {
 	body, err := os.ReadFile(reportPath)
 	if err != nil {
-		return false, fmt.Errorf("cannot read report file: %w", err)
+		return "", false, fmt.Errorf("cannot read report file: %w", err)
 	}
 	annotated := annotateReport(string(body), feedbackURL)
 	if annotated == string(body) {
-		return false, nil
+		return summarySection(annotated), false, nil
 	}
 	if err := os.WriteFile(reportPath, []byte(annotated), 0o644); err != nil {
-		return false, err
+		return "", false, err
 	}
-	return true, nil
+	return summarySection(annotated), true, nil
+}
+
+// summarySection returns the report's opening section: everything above
+// its first separator line (banner, summary, recommendation, what drove
+// it, and the override banner when one was inserted). It is cut from the
+// markdown itself, so what the skill shows as the verdict is the report's
+// own text. A report without a separator is returned whole.
+func summarySection(markdown string) string {
+	loc := separatorLineRe.FindStringIndex(markdown)
+	if loc == nil {
+		return markdown
+	}
+	return strings.TrimRight(markdown[:loc[0]], "\n") + "\n"
 }
 
 // annotateReport is the pure text transform behind runAnnotate. It is

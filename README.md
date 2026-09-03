@@ -22,7 +22,10 @@ the MR's `/soundings note` guidance comments (pre-authorized, since the
 MR itself is permission-gated), runs the Soundings analysis **once
 across all compare URLs together** (so compound risks across
 repositories are detected), and offers to post the report back to the
-MR as a new comment under your own identity.
+MR as a new comment under your own identity. In the session it shows
+only the report's opening section — summary, recommendation, and what
+drove it, with the override banner when one applies — plus the report
+file's path; the file is what gets posted.
 
 The skill only runs when you invoke it explicitly with the slash command
 above (`disable-model-invocation: true` in its frontmatter). Claude will
@@ -143,8 +146,9 @@ every design decision below follows from that:
 ## Requirements
 
 - The [Soundings](https://github.com/gwenneg/soundings) plugin, version
-  0.6.0 or later (and its Go toolchain requirement — this helper runs via
-  `go run` too)
+  0.9.0 or later — the first whose render tool requires `report_path` and
+  returns the report summary (and its Go toolchain requirement — this
+  helper runs via `go run` too)
 - `GITLAB_TOKEN` set to your personal access token (api scope) for the
   app-interface GitLab host — also what Soundings uses to fetch the
   compare URLs from that host

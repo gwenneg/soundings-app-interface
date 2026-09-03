@@ -68,6 +68,9 @@ the `guidance` array verbatim as pre-authorized extra guidance entries,
 an ABSOLUTE path ending in `.md` in the session's working directory, e.g.
 `<working directory>/soundings-report-<MR IID>.md`. The soundings helper
 writes the rendered report there itself — you never write the report file.
+Because a `report_path` is always passed, soundings never asks where to
+save the report; it shows only the report's opening section and the
+path — the file is the report.
 Do not pass `feedback_url` to soundings — it has no notion of that
 convention; it is handled in Step 3 instead.
 
@@ -90,10 +93,19 @@ This inserts, in place:
 - the feedback link, when a feedback URL was given.
 
 Soundings itself has no notion of either convention — both are
-app-interface's alone. Re-read the file and show the (possibly
-annotated) report to the user, then use the AskUserQuestion tool to ask
-whether to post it to the MR — never post without an explicit yes in
-this session. To post, call the `post` tool:
+app-interface's alone. Show the user the annotated report's opening
+section (`summary_markdown` in the annotate result — the summary, the
+recommendation, what drove it, and the override banner when one was
+inserted): reproduce it verbatim, character for character, as the plain
+body of your reply — never inside a code fence, blockquote, or any other
+container — followed by a single line giving the report file's path. Do
+not print, summarize, or excerpt the rest of the file: the file is the
+report, and the MR comment will be the whole file. Then use the
+AskUserQuestion tool to ask whether to post it to the MR — never post
+without an explicit yes in this session. If the question cannot be asked
+(the tool is denied or unavailable, which is what non-interactive
+`claude -p` runs do), do not post: say the report is at the path, ready
+to post from an interactive session. To post, call the `post` tool:
 
     post({ "mr": <IID or URL>, "report_path": <report file> })
 
