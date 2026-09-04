@@ -47,10 +47,9 @@ shell commands or other tools.
 
 The result is one JSON object: `mr_url`, `diff_urls` (from the newest
 devtools-bot `Diffs:` comment), `guidance` (all `/soundings note`
-comments on the MR — app-interface guidance is pre-authorized because
-the MR itself is permission-gated), and, when the
-corresponding env vars are set, `feedback_url` and `block_on` (the
-severity at or above which a concern blocks the release).
+comments on the MR, each with `is_authorized` set when its author is
+the MR author), and, when the corresponding env vars are set, `feedback_url` and `block_on`
+(the severity at or above which a concern blocks the release).
 
 On failure, relay the helper's distinction: VPN unreachable vs. a bad or
 missing `GITLAB_TOKEN` vs. a TLS trust failure (install the host's CA in
@@ -60,10 +59,15 @@ by fetching MR data with other tools.
 
 ## Step 2 — delegate to soundings
 
+Soundings relays to its analyst only the guidance entries with
+`is_authorized` true — the MR author's notes — and lists the rest in
+the report without using them. Pass the array exactly as the resolver
+returned it: never change a flag or a note's content.
+
 Invoke the `soundings:analyze` skill by name, passing in the invocation
 text: ALL `diff_urls` in one invocation (never one at a time — compound
 risks across the repos are only visible to a single combined analysis),
-the `guidance` array verbatim as pre-authorized extra guidance entries,
+the `guidance` array as extra guidance entries, content untouched,
 `block_on` only when the resolver emitted it, and a `report_path`:
 an ABSOLUTE path ending in `.md` in the session's working directory, e.g.
 `<working directory>/soundings-report-<MR IID>.md`. The soundings helper
