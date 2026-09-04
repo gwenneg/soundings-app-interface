@@ -147,6 +147,10 @@ type guidanceEntry struct {
 	Author     string `json:"author"`
 	Date       string `json:"date"`
 	CommentURL string `json:"comment_url"`
+	// IsAuthorized is true when the note was written by the MR author.
+	// Notes from anyone else are listed in the report but not relayed to
+	// the analysis.
+	IsAuthorized bool `json:"is_authorized"`
 }
 
 type resolveOutput struct {
@@ -181,6 +185,14 @@ func doResolve(mrArg string) (*resolveOutput, error) {
 	if err != nil {
 		return nil, err
 	}
+	mr, _, err := client.MergeRequests.GetMergeRequest(project, iid, nil)
+	if err != nil {
+		return nil, classifyErr(host, err)
+	}
+	mrAuthor := ""
+	if mr.Author != nil {
+		mrAuthor = mr.Author.Username
+	}
 	notes, err := fetchNotes(client, host, iid)
 	if err != nil {
 		return nil, err
@@ -189,7 +201,7 @@ func doResolve(mrArg string) (*resolveOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	guidance := extractGuidance(notes, mrURL)
+	guidance := extractGuidance(notes, mrURL, mrAuthor)
 	out := &resolveOutput{MRURL: mrURL, DiffURLs: diffURLs, Guidance: guidance}
 	out.FeedbackURL = os.Getenv("SOUNDINGS_FEEDBACK_URL")
 	if out.BlockOn, err = envBlockOn("SOUNDINGS_BLOCK_ON"); err != nil {
@@ -430,7 +442,7 @@ func extractDiffURLs(notes []note) ([]string, error) {
 }
 
 // extractGuidance collects /soundings note comments, oldest first.
-func extractGuidance(notes []note, mrURL string) []guidanceEntry {
+func extractGuidance(notes []note, mrURL, mrAuthor string) []guidanceEntry {
 	guidance := []guidanceEntry{}
 	for _, n := range notes {
 		m := guidanceRe.FindStringSubmatch(n.Body)
@@ -443,10 +455,11 @@ func extractGuidance(notes []note, mrURL string) []guidanceEntry {
 		}
 		slog.Debug("Found app-interface user guidance", "author", n.Author.Username)
 		guidance = append(guidance, guidanceEntry{
-			Content:    m[1],
-			Author:     n.Author.Username,
-			Date:       n.CreatedAt,
-			CommentURL: fmt.Sprintf("%s#note_%d", mrURL, n.ID),
+			Content:      m[1],
+			Author:       n.Author.Username,
+			Date:         n.CreatedAt,
+			CommentURL:   fmt.Sprintf("%s#note_%d", mrURL, n.ID),
+			IsAuthorized: mrAuthor != "" && n.Author.Username == mrAuthor,
 		})
 	}
 	// Notes arrive newest first; the report reads best oldest first.

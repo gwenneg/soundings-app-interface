@@ -91,7 +91,7 @@ func TestExtractGuidance(t *testing.T) {
 		mkNote("/SOUNDINGS NOTE older\nspanning lines", "bob", 2, "2026-08-27T10:00:00Z"),
 		mkNote("just a comment", "carol", 1, "2026-08-27T09:00:00Z"),
 	}
-	g := extractGuidance(notes, "https://h/mr/1")
+	g := extractGuidance(notes, "https://h/mr/1", "bob")
 	if len(g) != 2 {
 		t.Fatalf("got %d entries", len(g))
 	}
@@ -101,16 +101,27 @@ func TestExtractGuidance(t *testing.T) {
 	if g[1].CommentURL != "https://h/mr/1#note_3" {
 		t.Errorf("got comment url %q", g[1].CommentURL)
 	}
+	// Only the MR author's note is authorized by code.
+	if !g[0].IsAuthorized || g[1].IsAuthorized {
+		t.Errorf("expected bob (MR author) authorized and alice not, got %+v", g)
+	}
+}
+
+func TestExtractGuidanceUnknownAuthorAuthorizesNobody(t *testing.T) {
+	g := extractGuidance([]note{mkNote("/soundings note x", "bob", 1, "2026-08-27T10:00:00Z")}, "u", "")
+	if len(g) != 1 || g[0].IsAuthorized {
+		t.Fatalf("with no MR author, no note may be authorized, got %+v", g)
+	}
 }
 
 func TestExtractGuidanceIgnoresLegacyRCSNote(t *testing.T) {
-	if g := extractGuidance([]note{mkNote("/rcs note old convention", "bob", 1, "2026-08-27T10:00:00Z")}, "u"); len(g) != 0 {
+	if g := extractGuidance([]note{mkNote("/rcs note old convention", "bob", 1, "2026-08-27T10:00:00Z")}, "u", "bob"); len(g) != 0 {
 		t.Fatalf("legacy /rcs note must be ignored, got %+v", g)
 	}
 }
 
 func TestExtractGuidanceSkipsMissingCreatedAt(t *testing.T) {
-	if g := extractGuidance([]note{mkNote("/soundings note x", "bob", 1, "")}, "u"); len(g) != 0 {
+	if g := extractGuidance([]note{mkNote("/soundings note x", "bob", 1, "")}, "u", "bob"); len(g) != 0 {
 		t.Fatalf("expected no entries, got %+v", g)
 	}
 }

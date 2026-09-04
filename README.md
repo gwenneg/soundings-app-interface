@@ -18,8 +18,8 @@ GitLab diff.
 
 Point it at an app-interface deployment MR and it resolves the MR's
 compare URLs from the newest `devtools-bot` `Diffs:` comment, collects
-the MR's `/soundings note` guidance comments (pre-authorized, since the
-MR itself is permission-gated), runs the Soundings analysis **once
+the MR's `/soundings note` guidance comments (the MR author's are used by
+the analysis, anyone else's are listed in the report only), runs the Soundings analysis **once
 across all compare URLs together** (so compound risks across
 repositories are detected), and offers to post the report back to the
 MR as a new comment under your own identity. In the session it shows
@@ -146,9 +146,9 @@ every design decision below follows from that:
 ## Requirements
 
 - The [Soundings](https://github.com/gwenneg/soundings) plugin, version
-  0.9.0 or later — the first whose render tool requires `report_path` and
-  returns the report summary (and its Go toolchain requirement — this
-  helper runs via `go run` too)
+  0.10.0 or later — the first whose analysis uses the guidance this
+  plugin relays (and its Go toolchain requirement — this helper runs via
+  `go run` too)
 - `GITLAB_TOKEN` set to your personal access token (api scope) for the
   app-interface GitLab host — also what Soundings uses to fetch the
   compare URLs from that host
@@ -192,7 +192,7 @@ approval.
 ## How it relates to Soundings
 
 Everything Red Hat-specific lives here: the MR→compare-URL resolution,
-the pre-authorized guidance convention, the `block_on` plumbing, the
+the guidance authorization rule, the `block_on` plumbing, the
 override-justification report banner and the feedback link (both
 inserted by this helper's own `annotate`
 subcommand), and MR posting. The analysis itself — fetching, the
