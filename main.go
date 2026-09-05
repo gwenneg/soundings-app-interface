@@ -63,7 +63,7 @@ const (
 	defaultHost = "gitlab.cee.redhat.com"
 
 	notRecommendedMarker = "RELEASE NOT RECOMMENDED"
-	overrideBanner       = "\n**🔓 Override Justification Required** — If you proceed with this release despite this recommendation, post a comment in this merge request using `/soundings override <your justification>`. This creates an audit trail and helps improve the tool.\n\n"
+	overrideBanner       = "**🔓 Override Justification Required** — If you proceed with this release despite this recommendation, post a comment in this merge request using `/soundings override <your justification>`. This creates an audit trail and helps improve the tool.\n\n"
 
 	feedbackLineFormat = "💬 **[Share your feedback on this report](%s)** — Were the risks accurate? Were the action items useful? Your feedback helps improve Soundings.\n\n"
 )
