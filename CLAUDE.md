@@ -12,3 +12,14 @@ of the version it should actually trigger.
 
 This plugin is built on [Soundings](https://github.com/gwenneg/soundings)
 and shares its release process.
+
+## Documentation follows the code
+
+The docs describe the plugin as it is, not as it was. Any change to the
+plugin's implementation or behavior (skills, hooks, agents, MCP tools,
+report format, scoring, configuration, CLI flags) must land in the same
+change as the matching update to `README.md`, `docs/DEMO_REPORT.md`, and
+every other document that describes the affected behavior. Never leave
+the docs for a follow-up: a change is not done until the documentation
+reflects it. Before finishing, reread the docs touched by the change and
+confirm that nothing they say has been made wrong by it.
