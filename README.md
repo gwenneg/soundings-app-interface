@@ -1,216 +1,263 @@
-# Soundings - App-interface adapter
+# Soundings for app-interface
 
-**Take soundings before you ship.** Sailors have long measured the
-water's [depth](https://en.wikipedia.org/wiki/Depth_sounding) ahead
-before committing a ship to a course; this plugin does the same for a
-Red Hat [app-interface](https://gitlab.cee.redhat.com/service/app-interface)
-deployment merge request, before you commit it to production.
+**Take soundings before you ship.**
 
-It's a thin, Red Hat-specific adapter over
-[Soundings](https://github.com/gwenneg/soundings), the general-purpose
-Claude Code skill that assesses the release risk of any GitHub or
-GitLab diff.
+Soundings for app-interface is a [Claude Code](https://claude.com/claude-code)
+plugin that reads a Red Hat
+[app-interface](https://gitlab.cee.redhat.com/service/app-interface)
+deployment merge request before you merge it, the way sailors
+[sound the depth](https://en.wikipedia.org/wiki/Depth_sounding) ahead
+before committing to a course. Point it at the MR, by IID or URL:
 
 ```
 /soundings-app-interface:analyze 12345
-/soundings-app-interface:analyze https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/12345
 ```
 
-Point it at an app-interface deployment MR and it resolves the MR's
-compare URLs from the newest `devtools-bot` `Diffs:` comment, collects
-the MR's `/soundings note` guidance comments (the MR author's are used by
-the analysis, anyone else's are listed in the report only), runs the Soundings analysis **once
-across all compare URLs together** (so compound risks across
-repositories are detected), and offers to post the report back to the
-MR as a new comment under your own identity. In the session it shows
-only the report's opening section — summary, recommendation, and what
-drove it, with the override banner when one applies — plus the report
-file's path; the file is what gets posted.
+It takes the compare URL of every service the MR bumps from the newest
+`devtools-bot` `Diffs:` comment and hands them all to
+[Soundings](https://github.com/gwenneg/soundings) in a single analysis.
+A few minutes later you get one clear verdict (release, manual review,
+or no-go), a report specific enough to act on, and an offer to post it
+back to the MR under your own identity. Nothing to deploy, no LLM API
+key: it runs in the Claude Code session you already have, with the
+`GITLAB_TOKEN` you already use.
 
-The skill only runs when you invoke it explicitly with the slash command
-above (`disable-model-invocation: true` in its frontmatter). Claude will
-not start it on its own when you mention an app-interface MR - most
-app-interface MRs are not deployment MRs, and a plain MR review should
-stay a plain review.
+> [!IMPORTANT]
+> This plugin is for Red Hat associates. It is hardwired to
+> `gitlab.cee.redhat.com`, needs the VPN, and only understands
+> app-interface's bot-comment conventions. The repository is public
+> because nothing in it is secret. To analyze any other GitHub or GitLab
+> diff, install [Soundings](https://github.com/gwenneg/soundings)
+> directly.
 
-## Who this is for
+> Read the introduction post to Soundings:
+> [Take soundings before you ship](https://gwenneg.com/2026/09/03/take-soundings-before-you-ship.html).
 
-[Soundings](https://github.com/gwenneg/soundings) is the core project:
-a general-purpose, credential-agnostic release-risk analyzer that works
-against any public or private GitHub/GitLab compare URL, useful to
-anyone, inside or outside Red Hat. This repository is a thin adapter on
-top of it — see [How it relates to Soundings](#how-it-relates-to-soundings)
-below for the exact division of responsibility.
+## Why this plugin
 
-**This plugin itself is for Red Hat associates only.** It is hardwired
-to one internal host (`gitlab.cee.redhat.com`), requires VPN
-connectivity, and only makes sense against app-interface's specific
-bot-comment and `/soundings note` conventions — so it isn't useful
-outside Red Hat even though the repository itself is public. If you
-don't work at Red Hat, or you want to analyze a diff on GitHub or on
-your own GitLab instance, install
-[Soundings](https://github.com/gwenneg/soundings) directly instead.
+- **One command from MR to verdict:** no copying compare URLs out of the
+  bot comment.
+- **The whole deployment at once:** every service in the MR is analyzed
+  together, catching compound risks across repositories that per-repo CI
+  never sees.
+- **The report goes where the decision happens:** posted to the MR as a
+  new comment, under your identity, only after you said yes.
+- **Never runs on its own:** most app-interface MRs are not deployment
+  MRs, so Claude will not start it because you mentioned one.
+- **Safe on untrusted input:** everything read from the MR is treated as
+  hostile, and the plugin can do exactly three things with GitLab.
 
-This repository is public but *running* the skill requires Red Hat
-access: nothing in here is secret — the host name, project path, and
-conventions all appear in the public
-[RCS](https://github.com/RedHatInsights/release-confidence-score) repo.
+## Quick start
 
-## Install
-
-This plugin is distributed through the
-[claude-ichiba](https://github.com/gwenneg/claude-ichiba) marketplace —
-no cloning or file editing. In Claude Code:
-
-```
-/plugin marketplace add gwenneg/claude-ichiba
-/plugin install soundings-app-interface@claude-ichiba
-/reload-plugins
-```
-
-This plugin only resolves the app-interface MR and posts the report; the
-analysis itself is delegated to Soundings, which must be installed too
-(see [Requirements](#requirements) for the minimum version):
+You need [Claude Code](https://claude.com/claude-code), a Go toolchain
+(`brew install go`), VPN connectivity to the app-interface GitLab host,
+and `GITLAB_TOKEN` set to a personal access token with the `api` scope
+for that host. [Soundings](https://github.com/gwenneg/soundings) 0.10.0
+or later does the analysis, so install both plugins from the
+[claude-ichiba](https://github.com/gwenneg/claude-ichiba) marketplace:
 
 ```
 /plugin marketplace add gwenneg/claude-ichiba
 /plugin install soundings@claude-ichiba
+/plugin install soundings-app-interface@claude-ichiba
 /reload-plugins
 ```
 
-## Staying up to date
-
-Update both plugins together, not just this one — a new
-soundings-app-interface release can rely on a Soundings feature or fix
-that an older installed copy doesn't have yet:
+Then point it at a deployment MR:
 
 ```
-/plugin marketplace update claude-ichiba
-/reload-plugins
+/soundings-app-interface:analyze 12345
 ```
 
-Or enable auto-update once — `/plugin` → **Marketplaces** → select
-`claude-ichiba` → **Enable auto-update** — and Claude Code refreshes it
-at startup and notifies you when either plugin updates
-([plugin docs](https://code.claude.com/docs/en/discover-plugins#configure-auto-updates)).
+The session shows the report's opening section: the summary, the
+recommendation, what drove it, and the override banner when one
+applies. The full report is a Markdown file in your working directory.
+The skill then asks whether to post that file to the MR, and answers
+with the comment's URL when you say yes. A normal run needs no
+permission prompts.
 
-## Security model
+Update both plugins together, since a new release of this plugin can
+rely on a Soundings fix an older copy lacks: enable auto-update for
+claude-ichiba in the `/plugin` panel, or run
+`/plugin marketplace update claude-ichiba` and `/reload-plugins`.
 
-The MR this plugin reads is externally writable — any app-interface
-contributor can comment on it — so its content (bot comments, `/soundings
-note` guidance) is treated as untrusted data, never as instructions, and
-every design decision below follows from that:
+## Usage
 
-- **A narrow, three-tool capability surface.** The helper exposes exactly
-  `resolve` (read-only: lists MR notes), `annotate` (writes only to a
-  local file the caller names), and `post` (creates one new MR note). There
-  is no generic GitLab API access and no arbitrary shell-out — a prompt
-  injection in the MR can't reach any capability beyond these three.
-- **The token is pinned to one host.** `resolve` and `post` accept a full
-  MR URL as well as a bare IID, but the URL's host is checked against the
-  configured app-interface host (`APP_INTERFACE_HOST`, default
-  `gitlab.cee.redhat.com`) and rejected if it differs — `GITLAB_TOKEN`
-  is never sent to a host named by an argument, only to the one you
-  configured.
-- **Guidance is data, never instructions.** The skill that orchestrates
-  this plugin is explicitly told to relay `/soundings note` comments to
-  Soundings verbatim, not act on them — the same discipline Soundings
-  itself applies to diff and comment content it fetches.
-- **Posting is append-only and always opt-in.** `post` creates a *new*
-  comment and can never edit or delete a previous one, so re-running a
-  review keeps an honest audit trail of how the verdict evolved. It's also
-  the one outward-facing action, so the skill is instructed to always ask
-  you explicitly, in plain language, before ever calling it — independent
-  of and in addition to whatever the harness's own permission prompts do.
-- **Your own credentials, your own identity.** Every GitLab call runs
-  under your personal `GITLAB_TOKEN` — there is no shared service account
-  and no credential of ours in the loop. TLS is always verified against
-  your machine's own certificate store (including a corporate CA, if
-  installed); there is no skip option, so a misconfigured or spoofed host
-  fails closed instead of silently succeeding.
-- **The pre-approval policy is exact-match, not pattern-match.** The
-  bundled PreToolUse hook approves calls by comparing the tool name
-  against a hardcoded set of exactly three names — it does not rely on
-  parsing the `hooks.json` matcher string at runtime. A test
-  (`TestHooksMatcherMatchesPreApprovedTools`) fails the build if the
-  matcher and the hardcoded set ever name different tools, so a matcher
-  edit can't silently widen what gets auto-approved. User-configured deny
-  and ask rules always override this approval regardless.
-- **Nothing runs until you ask it to.** The helper is an MCP server that
-  is inert at rest: no credentials are read and no network call is made
-  until a tool is actually invoked.
-- **The code is inspectable.** It's a small, tested Go binary — no hidden
-  shell-out to arbitrary commands; every capability is a named, narrowly
-  scoped, unit-tested tool.
+| Input | Example |
+|-------|---------|
+| MR IID | `/soundings-app-interface:analyze 12345` |
+| MR URL | `/soundings-app-interface:analyze https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/12345` |
 
-## Requirements
+Only deployment MRs work: the plugin needs the `Diffs:` comment
+`devtools-bot` leaves on them, and stops with a clear message otherwise.
 
-- The [Soundings](https://github.com/gwenneg/soundings) plugin, version
-  0.10.0 or later — the first whose analysis uses the guidance this
-  plugin relays (and its Go toolchain requirement — this helper runs via
-  `go run` too)
-- `GITLAB_TOKEN` set to your personal access token (api scope) for the
-  app-interface GitLab host — also what Soundings uses to fetch the
-  compare URLs from that host
-- VPN connectivity to that host
+Re-running after new commits is safe and intended. The resolver reads
+the MR's current state, and each run posts a new comment instead of
+editing the previous one, so the MR keeps the history of how the
+verdict evolved.
 
-See [Security model](#security-model) for how `GITLAB_TOKEN` and TLS
-verification are handled.
+## What you get
+
+<details>
+<summary>Top of a report (from the demo analysis of a two-service deployment)</summary>
+
+```markdown
+**⚠️ AI-Generated Report** — This report is AI-generated and advisory. Always review AI-generated content prior to use.
+
+# 🚀 Release Readiness Report
+
+## 🎯 Summary
+
+Multi-service release of soundings-demo-api and soundings-demo-gateway with a database migration, email connector changes, and significant API changes requiring careful deployment coordination
+
+**Recommendation:** 🚫 **RELEASE NOT RECOMMENDED**
+
+Driven by 1 critical concern — detailed in Risk Analysis below.
+
+**🔓 Override Justification Required** — If you proceed with this release despite this recommendation, post a comment in this merge request using `/soundings override <your justification>`. This creates an audit trail and helps improve the tool.
+
+---
+
+## 🔍 Risk Analysis
+
+### Concerns
+
+| | Details |
+|----------|---------|
+| 🔥 | Database migration `V35__add_severity_column_on_event_table.sql` adds `severity` column + matching JPA field in `src/main/java/com/gwenneg/soundingsdemo/models/Event.java` - violates critical deployment rule requiring split releases |
+| ⚠️ | COMPOUND: retry + timeout. HTTP retry count for email delivery service increased from 2 to 5 in `src/main/java/com/gwenneg/soundingsdemo/connectors/EmailConnector.java` + HTTP timeout per attempt increased from 200ms to 1s in `src/main/resources/application.properties` - each change is individually within the 2s public API SLO but combined worst case may exceed it when the email service is degraded |
+
+### Positive Factors
+- New bulk export endpoint gated behind feature flag `FEATURE_BULK_EXPORT` in `src/main/java/com/gwenneg/soundingsdemo/config/FeatureConfig.java` - can be disabled without redeployment
+- `soundings-demo-gateway` event routing alignment in PR #342 was verified compatible with both old and new `soundings-demo-api` versions
+
+---
+
+## 📋 Action Items
+
+### 🔥 Critical (Complete Before Release)
+- BLOCK DEPLOYMENT: Split release into two parts - deploy SQL migration `V35` first, then deploy code changes with `severity` field in separate release
+```
+
+</details>
+
+This plugin adds the override banner: whoever merges against a no-go
+verdict is asked to leave a `/soundings override <justification>`
+comment on the MR, for the audit trail. Everything else above comes
+from Soundings.
+The critical concern caught a migration and the code using its new
+column shipping together, against the service's own deployment rules.
+The compound one connected a retry count raised in one file with a
+timeout raised in another. The last positive factor is only visible
+because both services were analyzed together.
+
+Your session shows the opening section, banner included. The file adds
+action items in three urgency levels, every `/soundings note` with its
+author and whether it was used, a changelog per service, and, when
+configured, a feedback link. Read the
+[full demo report](docs/DEMO_REPORT.md).
+
+## How the verdict is computed
+
+Soundings derives the verdict from a fixed policy: by default any
+critical concern blocks the release and any high concern requires manual
+review. Set `SOUNDINGS_BLOCK_ON` to `high` or `medium` to tighten that
+for critical services. A verdict that feels wrong traces back to one
+named concern you can go verify. The policy table is in the Soundings
+README, under
+[How the verdict is computed](https://github.com/gwenneg/soundings#how-the-verdict-is-computed).
+
+## Getting better results
+
+- **A `.soundings.md` file at the root of each service repository**
+  gives the analysis the service's SLOs, deployment rules such as
+  "migrations ship in their own release", and rollback procedure. That
+  is where the demo's blocking concern came from. Start from Soundings'
+  [`.soundings.example.md`](https://github.com/gwenneg/soundings/blob/main/.soundings.example.md).
+- **A `/soundings note` comment on the deployment MR** hands the analysis
+  context a diff cannot show, such as a load test that already ran. Only
+  the MR author's notes are used. Everyone else's are listed in the
+  report and ignored. Notes on the services' own PRs and MRs are picked
+  up by Soundings as usual.
+
+The full guide is Soundings'
+[Improving your release readiness analysis](https://github.com/gwenneg/soundings/blob/main/docs/IMPROVING_ANALYSIS.md).
 
 ## Configuration
 
+Set these in the environment Claude Code starts from.
+
 | Env var | Meaning | Default |
-|---|---|---|
-| `GITLAB_TOKEN` | your personal access token (api scope) — required | none |
-| `APP_INTERFACE_HOST` | app-interface GitLab host | `gitlab.cee.redhat.com` |
-| `SOUNDINGS_FEEDBACK_URL` | feedback link, inserted into the report by `annotate` when set | none |
-| `SOUNDINGS_BLOCK_ON` | severity at/above which a concern blocks the release (`critical`, `high`, or `medium`; one level below means manual review) | Soundings default (`critical`) |
+|---------|---------|---------|
+| `GITLAB_TOKEN` | Personal access token with the `api` scope for the app-interface host. Required. | none |
+| `APP_INTERFACE_HOST` | The app-interface GitLab host, and the only host the token is ever sent to. | `gitlab.cee.redhat.com` |
+| `SOUNDINGS_BLOCK_ON` | Severity at or above which a concern blocks the release: `critical`, `high`, or `medium`. One level below means manual review. | `critical` |
+| `SOUNDINGS_FEEDBACK_URL` | Feedback link inserted at the bottom of every report. | none |
+| `SOUNDINGS_LOG_LEVEL` | Helper log level: `debug`, `info`, `warn`, or `error`. | `info` |
 
-## Helper MCP server
+## Security
 
-The plugin bundles its Go helper as an MCP server exposing three tools —
-`resolve`, `annotate`, and `post` — started automatically per session.
-Like the Soundings helper, it is inert at rest: no credentials are read
-and no network is touched until a tool is called. Serving named tools
-instead of shell commands means the review skill's turn disallows Bash,
-Write, and Edit outright — the model orchestrates, the helper executes.
+Any app-interface contributor can comment on an MR, so everything the
+plugin reads is treated as data, never as instructions, and the
+protections are limits the model cannot cross. During a run the skill
+has no shell, file, or network tools. All it can do is call three tools
+served by a small Go helper bundled as an MCP server:
 
-## Permission prompts
+| Tool | What it does | What it can never do |
+|------|--------------|----------------------|
+| `resolve` | Lists the MR's notes and extracts the compare URLs and guidance | Write anything, anywhere |
+| `annotate` | Inserts the override banner and feedback link into the local report file | Touch the MR |
+| `post` | Creates one new MR comment from the report file, after you said yes | Edit or delete a comment |
 
-A review run is fully prompt-free at the harness level: Soundings
-pre-approves its own pipeline and writes the report file itself (via
-`report_path`), and this plugin's hook pre-approves its own `resolve`,
-`annotate`, and `post` tools by exact name (see
-[Security model](#security-model) for how). `post` being pre-approved
-here only means the harness doesn't pop up its own permission prompt —
-the skill still always asks you explicitly, in the conversation, before
-it ever calls `post`. If you want a harness prompt back on top of that,
-add `mcp__plugin_soundings-app-interface_helper__post` to your `ask`
-rules; user-configured deny/ask rules always override the hook's
-approval.
+- **Your token stays on one host.** An MR URL naming any other host is
+  rejected before a request is made, and TLS is always verified against
+  the system trust store, with no option to skip.
+- **Posting is opt-in, every time.** The skill asks you in plain language
+  before calling `post`. For a harness prompt on top, add the tool to
+  your `ask` rules, which always win over the plugin's own pre-approval.
+- **Your token, your identity.** The helper runs under your own token,
+  with no service account, LLM endpoint, or telemetry, and reads no
+  credential and opens no connection until a tool is invoked.
+- **The analysis is isolated.** Fetching and reading the diffs happen in
+  Soundings, whose read-only subagent cannot run commands or see your
+  files. The [Soundings security model](https://github.com/gwenneg/soundings#security)
+  has the full picture, including the residual risk that makes every
+  report advisory.
+
+## Troubleshooting
+
+The helper says what went wrong:
+
+| Message | Fix |
+|---------|-----|
+| `cannot reach <host> - are you on the VPN?` | Connect to the VPN. |
+| `TLS verification for <host> failed` | Install the host's CA in your system trust store. |
+| `GITLAB_TOKEN is not set` or `authentication to <host> failed` | Create a personal access token with the `api` scope on the host and export it as `GITLAB_TOKEN`. |
+| `no "Diffs:" comment from devtools-bot found on this MR` | Not a deployment MR, or the bot has not commented yet. |
+
+Set `SOUNDINGS_LOG_LEVEL=debug` to see the helper's log. Errors from the
+analysis itself are covered by Soundings'
+[Troubleshooting](https://github.com/gwenneg/soundings/blob/main/docs/TROUBLESHOOTING.md).
 
 ## How it relates to Soundings
 
-Everything Red Hat-specific lives here: the MR→compare-URL resolution,
-the guidance authorization rule, the `block_on` plumbing, the
-override-justification report banner and the feedback link (both
-inserted by this helper's own `annotate`
-subcommand), and MR posting. The analysis itself — fetching, the
-isolated assessment, the verdict computation, rendering — is entirely
-Soundings, invoked by name with a documented parameter contract.
-Soundings never knows the inputs came from app-interface.
+Everything app-interface-specific lives here: resolving the MR into
+compare URLs and guidance, the MR-author authorization rule, the
+override banner, the feedback link, and posting. The analysis itself,
+from fetching to the rendered report, is entirely Soundings, which never
+knows the inputs came from app-interface.
 
-Re-running on the same MR after new commits is safe and intended: the
-resolver always reads the MR's current state, and each run posts a new
-comment, keeping an audit trail of how the verdict evolved.
+## Development
 
-## Provenance
+Run `go test ./...`. Commit messages follow
+[Conventional Commits](https://www.conventionalcommits.org/): the release
+workflow, shared with Soundings, derives the next version from them, and
+merging the standing release PR publishes to the marketplace.
 
-This is the skills-based successor to the *app-interface mode* of
-[Release Confidence Score](https://github.com/RedHatInsights/release-confidence-score)
-(RCS), originally built at Red Hat. The standalone analysis mode became
-[Soundings](https://github.com/gwenneg/soundings).
+## Provenance and license
 
-## License
-
-[Apache-2.0](LICENSE)
+This plugin is the successor to the app-interface mode of
+[Release Confidence Score](https://github.com/RedHatInsights/release-confidence-score),
+originally built at Red Hat. The analysis core became
+[Soundings](https://github.com/gwenneg/soundings). Licensed under
+[Apache-2.0](LICENSE).
