@@ -142,6 +142,14 @@ func TestAnnotateReportInsertsBannerWhenNotRecommended(t *testing.T) {
 	if !strings.Contains(got, "tool.\n\n---") {
 		t.Fatalf("expected a blank line between the banner and the separator, got %q", got)
 	}
+	// The template already leaves a blank line before the separator, so the
+	// banner must slot in with exactly one blank line on each side.
+	if !strings.Contains(got, "Summary text.\n\n**🔓") {
+		t.Fatalf("expected exactly one blank line between the summary and the banner, got %q", got)
+	}
+	if strings.Contains(got, "\n\n\n") {
+		t.Fatalf("expected no consecutive blank lines, got %q", got)
+	}
 }
 
 func TestAnnotateReportLeavesOtherRecommendationsUnchanged(t *testing.T) {
