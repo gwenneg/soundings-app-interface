@@ -1,1 +1,47 @@
+# Go build and test artifacts
+/soundings-app-interface
+*.exe
+*.test
+*.out
+coverage.html
+go.work
+go.work.sum
+
+# analysis outputs and scratch (the analyze skill writes reports into the
+# working directory; the render stage leaves analysis.json on failure)
+report.md
+soundings-report.md
+soundings-report-*.md
+analysis*.json
+soundings-out/
+
+# local secrets and environment
+.env
+.env.*
+!.env.example
+
+# Claude Code local settings (per-machine permissions)
+.claude/settings.local.json
+
+# editors and IDEs
+.idea/
+.vscode/
+.fleet/
+*.iml
+*.swp
+*.swo
+*~
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux (Fedora)
+.directory
+.fuse_hidden*
+.nfs*
+.Trash-*
