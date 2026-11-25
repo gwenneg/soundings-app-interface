@@ -14,7 +14,7 @@ before committing to a course. Point it at the MR, by IID or URL:
 ```
 
 It takes the compare URL of every service the MR bumps from the newest
-`devtools-bot` `Diffs:` comment and hands them all to
+`AppSRE_Bot` `Diffs:` comment and hands them all to
 [Soundings](https://github.com/gwenneg/soundings) in a single analysis.
 A few minutes later you get one clear verdict (release, manual review,
 or no-go), a report specific enough to act on, and an offer to post it
@@ -89,7 +89,7 @@ claude-ichiba in the `/plugin` panel, or run
 | MR URL | `/soundings-app-interface:analyze https://gitlab.cee.redhat.com/service/app-interface/-/merge_requests/12345` |
 
 Only deployment MRs work: the plugin needs the `Diffs:` comment
-`devtools-bot` leaves on them, and stops with a clear message otherwise.
+`AppSRE_Bot` leaves on them, and stops with a clear message otherwise.
 
 Re-running after new commits is safe and intended. The resolver reads
 the MR's current state, and each run posts a new comment instead of
@@ -233,7 +233,7 @@ The helper says what went wrong:
 | `cannot reach <host> - are you on the VPN?` | Connect to the VPN. |
 | `TLS verification for <host> failed` | Install the host's CA in your system trust store. |
 | `GITLAB_TOKEN is not set` or `authentication to <host> failed` | Create a personal access token with the `api` scope on the host and export it as `GITLAB_TOKEN`. |
-| `no "Diffs:" comment from devtools-bot found on this MR` | Not a deployment MR, or the bot has not commented yet. |
+| `no "Diffs:" comment from AppSRE_Bot found on this MR` | Not a deployment MR, or the bot has not commented yet. |
 
 Set `SOUNDINGS_LOG_LEVEL=debug` to see the helper's log. Errors from the
 analysis itself are covered by Soundings'

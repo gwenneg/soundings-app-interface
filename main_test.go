@@ -81,7 +81,7 @@ func TestExtractDiffURLsIgnoresNonBotAndNonDiffs(t *testing.T) {
 
 func TestExtractDiffURLsNoBotComment(t *testing.T) {
 	if _, err := extractDiffURLs([]note{mkNote("hello", "someone", 1, "2026-08-27T10:00:00Z")}); err == nil {
-		t.Fatal("expected an error when no devtools-bot Diffs comment exists")
+		t.Fatal("expected an error when no AppSRE_Bot Diffs comment exists")
 	}
 }
 
