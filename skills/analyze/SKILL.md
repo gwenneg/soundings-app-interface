@@ -2,7 +2,7 @@
 name: analyze
 description: >-
   Analyze an app-interface deployment merge request for release
-  readiness: resolve the MR's compare URLs from the devtools-bot comment,
+  readiness: resolve the MR's compare URLs from the AppSRE_Bot comment,
   run the soundings release risk analysis across all of them together,
   and optionally post the report back to the MR. Invoked explicitly by
   the user with /soundings-app-interface:analyze <MR IID or URL>; never
@@ -46,14 +46,14 @@ soundings-app-interface plugin must be installed — do not substitute
 shell commands or other tools.
 
 The result is one JSON object: `mr_url`, `diff_urls` (from the newest
-devtools-bot `Diffs:` comment), `guidance` (all `/soundings note`
+AppSRE_Bot `Diffs:` comment), `guidance` (all `/soundings note`
 comments on the MR, each with `is_authorized` set when its author is
 the MR author), and, when the corresponding env vars are set, `feedback_url` and `block_on`
 (the severity at or above which a concern blocks the release).
 
 On failure, relay the helper's distinction: VPN unreachable vs. a bad or
 missing `GITLAB_TOKEN` vs. a TLS trust failure (install the host's CA in
-the system trust store) vs. "no devtools-bot Diffs comment" (not a
+the system trust store) vs. "no AppSRE_Bot Diffs comment" (not a
 deployment MR, or the bot has not run yet). Do not work around a failure
 by fetching MR data with other tools.
 

@@ -6,7 +6,7 @@
 //
 //	resolve <MR IID or URL>          Resolve an app-interface MR into
 //	                                 soundings inputs: the compare URLs from
-//	                                 the newest devtools-bot "Diffs:"
+//	                                 the newest AppSRE_Bot "Diffs:"
 //	                                 comment, the MR's "/soundings note"
 //	                                 guidance comments (pre-authorized - the
 //	                                 MR itself is permission-gated), and any
@@ -58,7 +58,7 @@ import (
 
 const (
 	project     = "service/app-interface"
-	botUsername = "devtools-bot"
+	botUsername = "AppSRE_Bot"
 	diffsMarker = "Diffs:"
 	defaultHost = "gitlab.cee.redhat.com"
 
@@ -421,7 +421,7 @@ func classifyErr(host string, err error) error {
 	return err
 }
 
-// extractDiffURLs returns the URLs from the newest devtools-bot Diffs
+// extractDiffURLs returns the URLs from the newest AppSRE_Bot Diffs
 // comment (notes arrive newest first).
 func extractDiffURLs(notes []note) ([]string, error) {
 	for _, n := range notes {
@@ -433,7 +433,7 @@ func extractDiffURLs(notes []note) ([]string, error) {
 			urls = append(urls, m[1])
 		}
 		if len(urls) > 0 {
-			slog.Debug("Found devtools-bot diff URLs", "count", len(urls))
+			slog.Debug("Found AppSRE_Bot diff URLs", "count", len(urls))
 			return urls, nil
 		}
 	}

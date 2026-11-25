@@ -27,7 +27,7 @@ func runMCP() error {
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "resolve",
 		Description: "Resolve an app-interface MR into soundings inputs: the compare URLs " +
-			"from the newest devtools-bot Diffs comment, the MR's /soundings note guidance " +
+			"from the newest AppSRE_Bot Diffs comment, the MR's /soundings note guidance " +
 			"comments (pre-authorized - the MR itself is permission-gated), and any " +
 			"configured block_on policy/feedback URL. Read-only: it only lists MR notes, " +
 			"authenticated by the user's own GITLAB_TOKEN.",
